@@ -1,10 +1,11 @@
 export type KenmonReturnType<D> =
-  | { error: Error; data: null }
-  | { error: null; data: D }
+  | { success: true; data: D }
+  | { success: false; error: Error }
 
 export interface KenmonIdentifier {
   type: string
   value: string
+  data?: any
 }
 
 export interface KenmonSession {
@@ -116,5 +117,5 @@ export abstract class KenmonAuthProvider {
 
   abstract authenticate(
     payload: KenmonAuthenticatePayload,
-  ): Promise<KenmonIdentifier>
+  ): Promise<KenmonReturnType<KenmonIdentifier>>
 }

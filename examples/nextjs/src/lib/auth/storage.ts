@@ -1,32 +1,33 @@
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db } from '../db'
-import { users, sessions } from '../db/schema'
+import { users, userIdentifiers, sessions, otps } from '../db/schema'
 import {
   KenmonStorage,
   KenmonSession,
-  KenmonSignUpPayload,
+  KenmonIdentifier,
+  OTP,
 } from '../../../../../src/types'
+import { KenmonOTPStorage } from '../../../../../src/providers/emailOTP'
 
 interface User {
   id: string
-  email: string
   createdAt: Date
   updatedAt: Date
 }
 
-export class KenmonDrizzleStorage implements KenmonStorage<User> {
+export class KenmonDrizzleStorage implements KenmonStorage<User>, KenmonOTPStorage {
   // User operations
-  async createUser(
-    id: string,
-    signUpPayload: KenmonSignUpPayload,
-  ): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values({
-        id,
-        email: signUpPayload.data.email,
-      })
-      .returning()
+  async createUser(identifier: KenmonIdentifier, data: any): Promise<User> {
+    // Create user
+    const [user] = await db.insert(users).values({}).returning()
+
+    // Create identifier entry
+    await db.insert(userIdentifiers).values({
+      userId: user.id,
+      type: identifier.type,
+      value: identifier.value,
+      data: identifier.data,
+    })
 
     return user
   }
@@ -38,6 +39,21 @@ export class KenmonDrizzleStorage implements KenmonStorage<User> {
       .where(eq(users.id, id))
       .limit(1)
     return user || null
+  }
+
+  async getUserByIdentifier(identifier: KenmonIdentifier): Promise<User | null> {
+    const result = await db.query.userIdentifiers.findFirst({
+      where: (userIdentifiers, { eq, and }) =>
+        and(
+          eq(userIdentifiers.type, identifier.type),
+          eq(userIdentifiers.value, identifier.value),
+        ),
+      with: {
+        user: true,
+      },
+    })
+
+    return result?.user || null
   }
 
   // Session operations
@@ -127,5 +143,29 @@ export class KenmonDrizzleStorage implements KenmonStorage<User> {
         updatedAt: new Date(),
       })
       .where(eq(sessions.userId, userId))
+  }
+
+  // OTP operations
+  async createOTP(email: string, code: string, expiresAt: Date): Promise<OTP> {
+    const [otp] = await db
+      .insert(otps)
+      .values({
+        email,
+        code,
+        expiresAt,
+        used: false,
+      })
+      .returning()
+
+    return otp
+  }
+
+  async getOTPById(id: string): Promise<OTP | null> {
+    const [otp] = await db.select().from(otps).where(eq(otps.id, id)).limit(1)
+    return otp || null
+  }
+
+  async markOTPAsUsed(id: string): Promise<void> {
+    await db.update(otps).set({ used: true }).where(eq(otps.id, id))
   }
 }
