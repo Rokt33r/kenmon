@@ -1,17 +1,22 @@
-import * as crypto from 'crypto'
-
+import crypto from 'crypto'
 import { addSeconds, isAfter, differenceInSeconds } from 'date-fns'
-import * as jwt from 'jsonwebtoken'
-
+import jwt from 'jsonwebtoken'
 import {
   KenmonConfig,
   KenmonFrameworkAdapter,
-  KenmonPreparationPayload,
+  KenmonPreparePayload,
+  KenmonReturnType,
   KenmonSession,
-  KenmonSignInPayload,
-  KenmonSignUpPayload,
   KenmonStorage,
+  KenmonAuthProvider,
 } from './types'
+
+import {
+  KenmonProviderNotFoundError,
+  KenmonPrepareNotSupportedError,
+  KenmonUserNotFoundError,
+  KenmonUserAlreadyExistsError,
+} from './errors'
 
 const defaultSessionCookieName = 'session'
 
@@ -27,6 +32,7 @@ export class KenmonAuthService<U> {
 
   storage: KenmonStorage<U>
   framework: KenmonFrameworkAdapter
+  providers: Map<string, KenmonAuthProvider>
 
   constructor(config: KenmonConfig<U>) {
     this.secret = config.secret
@@ -40,13 +46,100 @@ export class KenmonAuthService<U> {
 
     this.storage = config.storage
     this.framework = config.framework
+    this.providers = new Map()
   }
 
-  async prepare(payload: KenmonPreparationPayload) {}
+  registerProvider(provider: KenmonAuthProvider): void {
+    this.providers.set(provider.type, provider)
+  }
 
-  async signIn(payload: KenmonSignInPayload) {}
+  async prepare(payload: KenmonPreparePayload): Promise<KenmonReturnType<any>> {
+    const provider = this.providers.get(payload.type)
+    if (!provider) {
+      return {
+        error: new KenmonProviderNotFoundError(payload.type),
+        data: null,
+      }
+    }
 
-  async signUp(payload: KenmonSignUpPayload) {}
+    if (!provider.prepare) {
+      return {
+        error: new KenmonPrepareNotSupportedError(payload.type),
+        data: null,
+      }
+    }
+
+    return provider.prepare(payload)
+  }
+
+  async signIn(
+    type: string,
+    data: any,
+  ): Promise<KenmonReturnType<KenmonSession>> {
+    const provider = this.providers.get(type)
+    if (!provider) {
+      return { error: new KenmonProviderNotFoundError(type), data: null }
+    }
+
+    try {
+      // Provider validates credentials and returns identifier
+      const identifier = await provider.authenticate({
+        type,
+        intent: 'sign-in',
+        data,
+      })
+
+      // Look up existing user
+      const user = await this.storage.getUserByIdentifier(identifier)
+      if (!user) {
+        return { error: new KenmonUserNotFoundError(), data: null }
+      }
+
+      // Create session
+      const userId = (user as any).id
+      const session = await this.createSession(userId)
+      return { error: null, data: session }
+    } catch (error) {
+      return { error: error as Error, data: null }
+    }
+  }
+
+  async signUp(
+    type: string,
+    data: any,
+  ): Promise<KenmonReturnType<KenmonSession>> {
+    const provider = this.providers.get(type)
+    if (!provider) {
+      return { error: new KenmonProviderNotFoundError(type), data: null }
+    }
+
+    try {
+      // Provider validates credentials and returns identifier
+      const identifier = await provider.authenticate({
+        type,
+        intent: 'sign-up',
+        data,
+      })
+
+      // Check if user already exists
+      const existingUser = await this.storage.getUserByIdentifier(identifier)
+      if (existingUser) {
+        return {
+          error: new KenmonUserAlreadyExistsError(identifier.value),
+          data: null,
+        }
+      }
+
+      // Create new user
+      const user = await this.storage.createUser(identifier, data)
+
+      // Create session
+      const session = await this.createSession((user as any).id)
+      return { error: null, data: session }
+    } catch (error) {
+      return { error: error as Error, data: null }
+    }
+  }
 
   async createSession(
     userId: string,

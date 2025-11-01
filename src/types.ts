@@ -1,4 +1,11 @@
-import type { Algorithm } from 'jsonwebtoken'
+export type KenmonReturnType<D> =
+  | { error: Error; data: null }
+  | { error: null; data: D }
+
+export interface KenmonIdentifier {
+  type: string
+  value: string
+}
 
 export interface KenmonSession {
   id: string
@@ -12,19 +19,15 @@ export interface KenmonSession {
   userAgent?: string
 }
 
-export interface KenmonPreparationPayload {
+export interface KenmonPreparePayload {
   type: string
   intent: 'sign-up' | 'sign-in'
   data: any
 }
 
-export interface KenmonSignInPayload {
+export interface KenmonAuthenticatePayload {
   type: string
-  data: any
-}
-
-export interface KenmonSignUpPayload {
-  type: string
+  intent: 'sign-up' | 'sign-in'
   data: any
 }
 
@@ -48,8 +51,9 @@ export interface KenmonConfig<U> {
 // Storage interface
 export interface KenmonStorage<U> {
   // User operations
-  createUser(id: string, signUpPayload: KenmonSignUpPayload): Promise<U>
+  createUser(identifier: KenmonIdentifier, data: any): Promise<U>
   getUserById(id: string): Promise<U | null>
+  getUserByIdentifier(identifier: KenmonIdentifier): Promise<U | null>
 
   // Session operations
   createSession(
@@ -103,4 +107,14 @@ export interface OTP {
   code: string
   expiresAt: Date
   used: boolean
+}
+
+export abstract class KenmonAuthProvider {
+  abstract readonly type: string
+
+  prepare?(payload: KenmonPreparePayload): Promise<KenmonReturnType<any>>
+
+  abstract authenticate(
+    payload: KenmonAuthenticatePayload,
+  ): Promise<KenmonIdentifier>
 }
