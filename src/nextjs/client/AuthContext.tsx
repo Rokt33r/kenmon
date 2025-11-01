@@ -9,8 +9,6 @@ import {
   useCallback,
 } from 'react'
 
-import { User } from '../../types'
-
 interface AuthContextType {
   user: any | null
   signOut: () => Promise<void>
@@ -21,9 +19,9 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
 })
 
-interface AuthProviderProps {
+interface AuthProviderProps<U> {
   children: ReactNode
-  user: User | null
+  user: U | null
   config: {
     session: {
       refreshInterval: number
@@ -34,12 +32,12 @@ interface AuthProviderProps {
 
 const defaultLastRefreshTimeKey = 'auth:last_refresh_time'
 
-export function AuthProvider({
+export function AuthProvider<U>({
   children,
   user,
   config,
   lastRefreshTimeKey = defaultLastRefreshTimeKey,
-}: AuthProviderProps) {
+}: AuthProviderProps<U>) {
   const isRefreshing = useRef(false)
   const refreshInterval = config.session.refreshInterval
 

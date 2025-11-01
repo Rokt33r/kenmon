@@ -1,2 +1,2 @@
 export * from './types'
-export { AuthService } from './auth'
+export { KenmonAuthService } from './auth'

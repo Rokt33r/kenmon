@@ -1,9 +1,9 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-import { FrameworkAdapter, CookieOptions } from '../types'
+import { KenmonFrameworkAdapter, CookieOptions } from '../types'
 
-export class NextJSFrameworkAdapter implements FrameworkAdapter {
+export class NextJSFrameworkAdapter implements KenmonFrameworkAdapter {
   async setCookie(
     name: string,
     value: string,

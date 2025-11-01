@@ -4,77 +4,57 @@ import { addSeconds, isAfter, differenceInSeconds } from 'date-fns'
 import * as jwt from 'jsonwebtoken'
 
 import {
-  AuthStorage,
-  EmailProvider,
-  FrameworkAdapter,
-  AuthConfig,
-  User,
-  Session,
+  KenmonConfig,
+  KenmonFrameworkAdapter,
+  KenmonPreparationPayload,
+  KenmonSession,
+  KenmonSignInPayload,
+  KenmonSignUpPayload,
+  KenmonStorage,
 } from './types'
 
 const defaultSessionCookieName = 'session'
 
-export class AuthService {
-  constructor(
-    private storage: AuthStorage,
-    private email: EmailProvider,
-    private framework: FrameworkAdapter,
-    public config: AuthConfig,
-  ) {}
-
-  async sendOTP(email: string): Promise<string> {
-    const code = this.generateOTPCode(this.config.otp.length || 20)
-    const expiresAt = addSeconds(new Date(), this.config.otp.ttl)
-
-    const otp = await this.storage.createOTP(email, code, expiresAt)
-    await this.email.sendOTP(email, code)
-
-    return otp.id
+export class KenmonAuthService<U> {
+  secret: string
+  session: {
+    ttl: number
+    refreshInterval: number
+    cookieName: string
+    secure: boolean
+    sameSite: 'lax' | 'strict' | 'none'
   }
 
-  async verifyOTPAndSignIn(
-    otpId: string,
-    email: string,
-    code: string,
-  ): Promise<User | null> {
-    const otp = await this.storage.verifyOTP(otpId, email, code)
-    if (!otp) return null
+  storage: KenmonStorage<U>
+  framework: KenmonFrameworkAdapter
 
-    const user = await this.storage.getUserByEmail(otp.email)
-    if (!user) {
-      throw new Error('No user found for this email')
-    }
-    await this.createSession(user.id)
-
-    return user
-  }
-
-  async verifyOTPAndSignUp(
-    otpId: string,
-    email: string,
-    code: string,
-  ): Promise<User | null> {
-    const otp = await this.storage.verifyOTP(otpId, email, code)
-    if (!otp) return null
-
-    const existingUser = await this.storage.getUserByEmail(otp.email)
-    if (existingUser) {
-      throw new Error('Email is already taken')
+  constructor(config: KenmonConfig<U>) {
+    this.secret = config.secret
+    this.session = {
+      ttl: config.session?.ttl ?? 14 * 24 * 60 * 60,
+      refreshInterval: config.session?.refreshInterval ?? 1 * 24 * 60 * 60,
+      cookieName: config.session?.cookieName ?? 'session',
+      secure: config.session?.secure ?? process.env.NODE_ENV === 'production',
+      sameSite: config.session?.sameSite ?? 'lax',
     }
 
-    const user = await this.storage.createUser(otp.email)
-    await this.createSession(user.id)
-
-    return user
+    this.storage = config.storage
+    this.framework = config.framework
   }
+
+  async prepare(payload: KenmonPreparationPayload) {}
+
+  async signIn(payload: KenmonSignInPayload) {}
+
+  async signUp(payload: KenmonSignUpPayload) {}
 
   async createSession(
     userId: string,
     ipAddress?: string,
     userAgent?: string,
-  ): Promise<Session> {
+  ): Promise<KenmonSession> {
     const token = this.generateSessionToken()
-    const expiresAt = addSeconds(new Date(), this.config.session.ttl)
+    const expiresAt = addSeconds(new Date(), this.session.ttl)
 
     const session = await this.storage.createSession(
       userId,
@@ -89,23 +69,15 @@ export class AuthService {
     return session
   }
 
-  async verifySession(): Promise<{
-    user: User
-    session: {
-      id: string
-      createdAt: Date
-      updatedAt: Date
-      expiresAt: Date
-    }
-  } | null> {
+  async verifySession(): Promise<KenmonSession | null> {
     const cookieValue = await this.framework.getCookie(
-      this.config.session.cookieName || defaultSessionCookieName,
+      this.session.cookieName || defaultSessionCookieName,
     )
 
     if (!cookieValue) return null
 
     try {
-      const decoded = jwt.verify(cookieValue, this.config.jwt.secret) as {
+      const decoded = jwt.verify(cookieValue, this.secret) as {
         sessionId: string
         token: string
       }
@@ -118,18 +90,7 @@ export class AuthService {
         return null
       }
 
-      const user = await this.storage.getUserById(session.userId)
-      if (!user) return null
-
-      return {
-        user,
-        session: {
-          id: session.id,
-          createdAt: session.createdAt,
-          updatedAt: session.updatedAt,
-          expiresAt: session.expiresAt,
-        },
-      }
+      return session
     } catch {
       return null
     }
@@ -137,12 +98,12 @@ export class AuthService {
 
   needsRefresh(updatedAt: Date): boolean {
     const sessionAge = differenceInSeconds(new Date(), updatedAt)
-    return sessionAge > this.config.session.refreshInterval
+    return sessionAge > this.session.refreshInterval
   }
 
   async refreshSession(sessionId: string): Promise<void> {
     const now = new Date()
-    const newExpiresAt = addSeconds(now, this.config.session.ttl)
+    const newExpiresAt = addSeconds(now, this.session.ttl)
     const newToken = this.generateSessionToken()
 
     await this.storage.updateSession(sessionId, {
@@ -154,12 +115,12 @@ export class AuthService {
   }
 
   async signOut(): Promise<void> {
-    const result = await this.verifySession()
-    if (result) {
-      await this.storage.invalidateSession(result.session.id)
+    const session = await this.verifySession()
+    if (session != null) {
+      await this.storage.invalidateSession(session.id)
     }
     await this.framework.deleteCookie(
-      this.config.session.cookieName || defaultSessionCookieName,
+      this.session.cookieName || defaultSessionCookieName,
     )
   }
 
@@ -172,32 +133,21 @@ export class AuthService {
       token,
     }
 
-    const jwtToken = jwt.sign(payload, this.config.jwt.secret, {
-      algorithm: (this.config.jwt.algorithm as jwt.Algorithm) || 'HS256',
+    const jwtToken = jwt.sign(payload, this.secret, {
+      algorithm: 'HS256',
     })
 
     await this.framework.setCookie(
-      this.config.session.cookieName || defaultSessionCookieName,
+      this.session.cookieName || defaultSessionCookieName,
       jwtToken,
       {
         httpOnly: true,
-        secure:
-          this.config.session.secure ?? process.env.NODE_ENV === 'production',
-        sameSite: this.config.session.sameSite || 'lax',
-        maxAge: this.config.session.ttl,
+        secure: this.session.secure ?? process.env.NODE_ENV === 'production',
+        sameSite: this.session.sameSite || 'lax',
+        maxAge: this.session.ttl,
         path: '/',
       },
     )
-  }
-
-  private generateOTPCode(length: number): string {
-    const chars =
-      '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-    let code = ''
-    for (let i = 0; i < length; i++) {
-      code += chars[crypto.randomInt(0, chars.length)]
-    }
-    return code
   }
 
   private generateSessionToken(): string {
