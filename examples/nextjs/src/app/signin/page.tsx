@@ -6,7 +6,12 @@ import { auth } from '../../lib/auth/auth'
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ step?: string; email?: string; otpId?: string; error?: string }>
+  searchParams: Promise<{
+    step?: string
+    email?: string
+    otpId?: string
+    error?: string
+  }>
 }) {
   const params = await searchParams
   const step = params.step || 'email'
@@ -37,9 +42,8 @@ export default async function SignInPage({
     })
 
     if (!result.success) {
-      redirect(
-        `/signin?error=${encodeURIComponent(result.error.message)}`,
-      )
+      console.error(result.error)
+      redirect(`/signin?error=${encodeURIComponent(result.error.message)}`)
     }
 
     redirect(
