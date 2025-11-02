@@ -184,7 +184,7 @@ export class EmailOTPAuthProvider extends KenmonAuthProvider {
       return {
         success: true,
         data: {
-          type: 'email',
+          type: 'email-otp',
           value: email,
         },
       }
