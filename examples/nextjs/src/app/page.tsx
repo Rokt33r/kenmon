@@ -55,10 +55,7 @@ export default async function Home() {
                 {identifiers.length > 0 ? (
                   <ul className='space-y-2'>
                     {identifiers.map((identifier, idx) => (
-                      <li
-                        key={idx}
-                        className='flex items-center gap-2 text-sm'
-                      >
+                      <li key={idx} className='flex items-center gap-2 text-sm'>
                         <span className='font-medium capitalize'>
                           {identifier.type}:
                         </span>

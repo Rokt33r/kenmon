@@ -15,7 +15,9 @@ interface User {
   updatedAt: Date
 }
 
-export class KenmonDrizzleStorage implements KenmonStorage<User>, KenmonOTPStorage {
+export class KenmonDrizzleStorage
+  implements KenmonStorage<User>, KenmonOTPStorage
+{
   // User operations
   async createUser(identifier: KenmonIdentifier, data: any): Promise<User> {
     // Create user
@@ -41,7 +43,9 @@ export class KenmonDrizzleStorage implements KenmonStorage<User>, KenmonOTPStora
     return user || null
   }
 
-  async getUserByIdentifier(identifier: KenmonIdentifier): Promise<User | null> {
+  async getUserByIdentifier(
+    identifier: KenmonIdentifier,
+  ): Promise<User | null> {
     const result = await db.query.userIdentifiers.findFirst({
       where: (userIdentifiers, { eq, and }) =>
         and(

@@ -29,17 +29,18 @@ export const userIdentifiers = pgTable(
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
-  (t) => [
-    uniqueIndex('type_value_idx').on(t.type, t.value),
-  ],
+  (t) => [uniqueIndex('type_value_idx').on(t.type, t.value)],
 )
 
-export const userIdentifiersRelations = relations(userIdentifiers, ({ one }) => ({
-  user: one(users, {
-    fields: [userIdentifiers.userId],
-    references: [users.id],
+export const userIdentifiersRelations = relations(
+  userIdentifiers,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [userIdentifiers.userId],
+      references: [users.id],
+    }),
   }),
-}))
+)
 
 export const usersRelations = relations(users, ({ many }) => ({
   identifiers: many(userIdentifiers),
