@@ -103,7 +103,7 @@ export class KenmonAuthService<U> {
 
       // Create session
       const userId = (user as any).id
-      const session = await this.createSession(userId)
+      const session = await this.createSession(userId, payload.ipAddress, payload.userAgent)
       return { success: true, data: session }
     } else {
       // sign-up
@@ -120,7 +120,7 @@ export class KenmonAuthService<U> {
       const user = await this.storage.createUser(identifier, payload.data)
 
       // Create session
-      const session = await this.createSession((user as any).id)
+      const session = await this.createSession((user as any).id, payload.ipAddress, payload.userAgent)
       return { success: true, data: session }
     }
   }

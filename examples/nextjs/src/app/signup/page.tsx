@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '../../lib/auth/auth'
+import { getRequestMetadata } from '../../lib/auth/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -75,10 +76,15 @@ export default async function SignUpPage({
       )
     }
 
+    // Extract IP address and user agent from request headers
+    const { ipAddress, userAgent } = await getRequestMetadata()
+
     const result = await auth.authenticate({
       type: 'email-otp',
       intent: 'sign-up',
       data: { email, otpId, code },
+      ipAddress,
+      userAgent,
     })
 
     if (!result.success) {

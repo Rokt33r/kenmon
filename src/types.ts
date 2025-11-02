@@ -30,6 +30,8 @@ export interface KenmonAuthenticatePayload {
   type: string
   intent: 'sign-up' | 'sign-in'
   data: any
+  ipAddress?: string
+  userAgent?: string
 }
 
 export interface KenmonConfig<U> {
