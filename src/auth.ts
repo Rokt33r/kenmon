@@ -5,6 +5,7 @@ import {
   KenmonConfig,
   KenmonFrameworkAdapter,
   KenmonPreparePayload,
+  KenmonAuthenticatePayload,
   KenmonReturnType,
   KenmonSession,
   KenmonStorage,
@@ -72,77 +73,56 @@ export class KenmonAuthService<U> {
     return provider.prepare(payload)
   }
 
-  async signIn(
-    type: string,
-    data: any,
+  async authenticate(
+    payload: KenmonAuthenticatePayload,
   ): Promise<KenmonReturnType<KenmonSession>> {
-    const provider = this.providers.get(type)
+    const provider = this.providers.get(payload.type)
     if (!provider) {
-      return { success: false, error: new KenmonProviderNotFoundError(type) }
-    }
-
-    // Provider validates credentials and returns identifier
-    const result = await provider.authenticate({
-      type,
-      intent: 'sign-in',
-      data,
-    })
-
-    if (!result.success) {
-      return { success: false, error: result.error }
-    }
-
-    const identifier = result.data
-
-    // Look up existing user
-    const user = await this.storage.getUserByIdentifier(identifier)
-    if (!user) {
-      return { success: false, error: new KenmonUserNotFoundError() }
-    }
-
-    // Create session
-    const userId = (user as any).id
-    const session = await this.createSession(userId)
-    return { success: true, data: session }
-  }
-
-  async signUp(
-    type: string,
-    data: any,
-  ): Promise<KenmonReturnType<KenmonSession>> {
-    const provider = this.providers.get(type)
-    if (!provider) {
-      return { success: false, error: new KenmonProviderNotFoundError(type) }
-    }
-
-    // Provider validates credentials and returns identifier
-    const result = await provider.authenticate({
-      type,
-      intent: 'sign-up',
-      data,
-    })
-
-    if (!result.success) {
-      return { success: false, error: result.error }
-    }
-
-    const identifier = result.data
-
-    // Check if user already exists
-    const existingUser = await this.storage.getUserByIdentifier(identifier)
-    if (existingUser) {
       return {
         success: false,
-        error: new KenmonUserAlreadyExistsError(identifier.value),
+        error: new KenmonProviderNotFoundError(payload.type),
       }
     }
 
-    // Create new user
-    const user = await this.storage.createUser(identifier, data)
+    // Provider validates credentials and returns identifier
+    const result = await provider.authenticate(payload)
 
-    // Create session
-    const session = await this.createSession((user as any).id)
-    return { success: true, data: session }
+    if (!result.success) {
+      return { success: false, error: result.error }
+    }
+
+    const identifier = result.data
+
+    // Handle based on intent
+    if (payload.intent === 'sign-in') {
+      // Look up existing user
+      const user = await this.storage.getUserByIdentifier(identifier)
+      if (!user) {
+        return { success: false, error: new KenmonUserNotFoundError() }
+      }
+
+      // Create session
+      const userId = (user as any).id
+      const session = await this.createSession(userId)
+      return { success: true, data: session }
+    } else {
+      // sign-up
+      // Check if user already exists
+      const existingUser = await this.storage.getUserByIdentifier(identifier)
+      if (existingUser) {
+        return {
+          success: false,
+          error: new KenmonUserAlreadyExistsError(identifier.value),
+        }
+      }
+
+      // Create new user
+      const user = await this.storage.createUser(identifier, payload.data)
+
+      // Create session
+      const session = await this.createSession((user as any).id)
+      return { success: true, data: session }
+    }
   }
 
   async createSession(
