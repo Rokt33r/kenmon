@@ -4,6 +4,8 @@ import { auth } from '../lib/auth/auth'
 import { db } from '../lib/db'
 import { userIdentifiers } from '../lib/db/schema'
 import { eq } from 'drizzle-orm'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default async function Home() {
   // Check authentication status
@@ -30,28 +32,32 @@ export default async function Home() {
   }
 
   return (
-    <div className='flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black'>
-      <main className='flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start'>
-        <div className='w-full'>
-          <h1 className='text-3xl font-bold mb-8'>Next.js Demo App</h1>
+    <div className='flex min-h-screen items-center justify-center bg-background'>
+      <main className='w-full max-w-3xl px-6 py-12'>
+        <h1 className='text-3xl font-bold mb-8'>Next.js Demo App</h1>
 
-          {session ? (
-            /* Authenticated UI */
-            <div className='space-y-6'>
-              <div className='p-6 border border-zinc-200 rounded-lg dark:border-zinc-800'>
-                <h2 className='text-xl font-semibold mb-4'>User Information</h2>
-                <div className='space-y-2'>
-                  <p className='text-sm'>
-                    <span className='font-medium'>User ID:</span>{' '}
-                    <code className='bg-zinc-100 dark:bg-zinc-900 px-2 py-1 rounded text-xs'>
-                      {session.userId}
-                    </code>
-                  </p>
-                </div>
-              </div>
+        {session ? (
+          /* Authenticated UI */
+          <div className='space-y-6'>
+            <Card>
+              <CardHeader>
+                <CardTitle>User Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className='text-sm'>
+                  <span className='font-medium'>User ID:</span>{' '}
+                  <code className='bg-muted px-2 py-1 rounded text-xs'>
+                    {session.userId}
+                  </code>
+                </p>
+              </CardContent>
+            </Card>
 
-              <div className='p-6 border border-zinc-200 rounded-lg dark:border-zinc-800'>
-                <h2 className='text-xl font-semibold mb-4'>User Identifiers</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>User Identifiers</CardTitle>
+              </CardHeader>
+              <CardContent>
                 {identifiers.length > 0 ? (
                   <ul className='space-y-2'>
                     {identifiers.map((identifier, idx) => (
@@ -59,50 +65,43 @@ export default async function Home() {
                         <span className='font-medium capitalize'>
                           {identifier.type}:
                         </span>
-                        <code className='bg-zinc-100 dark:bg-zinc-900 px-2 py-1 rounded text-xs'>
+                        <code className='bg-muted px-2 py-1 rounded text-xs'>
                           {identifier.value}
                         </code>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className='text-sm text-zinc-500'>No identifiers found</p>
+                  <p className='text-sm text-muted-foreground'>
+                    No identifiers found
+                  </p>
                 )}
-              </div>
+              </CardContent>
+            </Card>
 
-              <form action={handleSignOut}>
-                <button
-                  type='submit'
-                  className='w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'
-                >
-                  Sign Out
-                </button>
-              </form>
-            </div>
-          ) : (
-            /* Unauthenticated UI - Links to Sign In/Sign Up */
-            <div className='space-y-6'>
-              <p className='text-zinc-600 dark:text-zinc-400'>
-                Welcome! Please sign in or create an account to continue.
-              </p>
+            <form action={handleSignOut}>
+              <Button type='submit' variant='destructive' className='w-full'>
+                Sign Out
+              </Button>
+            </form>
+          </div>
+        ) : (
+          /* Unauthenticated UI - Links to Sign In/Sign Up */
+          <div className='space-y-6'>
+            <p className='text-muted-foreground'>
+              Welcome! Please sign in or create an account to continue.
+            </p>
 
-              <div className='flex gap-4'>
-                <Link
-                  href='/signin'
-                  className='flex-1 px-4 py-2 text-center border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors'
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href='/signup'
-                  className='flex-1 px-4 py-2 text-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
-                >
-                  Sign Up
-                </Link>
-              </div>
+            <div className='flex gap-4'>
+              <Button asChild variant='outline' className='flex-1'>
+                <Link href='/signin'>Sign In</Link>
+              </Button>
+              <Button asChild className='flex-1'>
+                <Link href='/signup'>Sign Up</Link>
+              </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </main>
     </div>
   )

@@ -2,6 +2,16 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '../../lib/auth/auth'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 
 export default async function SignUpPage({
   searchParams,
@@ -83,110 +93,85 @@ export default async function SignUpPage({
   }
 
   return (
-    <div className='flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black'>
+    <div className='flex min-h-screen items-center justify-center bg-background'>
       <main className='w-full max-w-md px-6 py-12'>
-        <div className='p-8 border border-zinc-200 rounded-lg dark:border-zinc-800 bg-white dark:bg-black'>
-          <h1 className='text-2xl font-bold mb-6'>Sign Up</h1>
-
-          {step === 'email' ? (
-            /* Step 1: Email Input */
-            <form action={sendOTP} className='space-y-4'>
-              <div>
-                <label
-                  htmlFor='email'
-                  className='block text-sm font-medium mb-2'
-                >
-                  Email Address
-                </label>
-                <input
-                  type='email'
-                  id='email'
-                  name='email'
-                  defaultValue={email}
-                  placeholder='you@example.com'
-                  className='w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900'
-                  required
-                />
-              </div>
-
-              {error && (
-                <div className='text-sm text-red-600 dark:text-red-400'>
-                  {error}
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign Up</CardTitle>
+            <CardDescription>
+              {step === 'email'
+                ? 'Create a new account with your email'
+                : `Enter the code sent to ${email}`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {step === 'email' ? (
+              /* Step 1: Email Input */
+              <form action={sendOTP} className='space-y-4'>
+                <div className='space-y-2'>
+                  <Label htmlFor='email'>Email Address</Label>
+                  <Input
+                    type='email'
+                    id='email'
+                    name='email'
+                    defaultValue={email}
+                    placeholder='you@example.com'
+                    required
+                  />
                 </div>
-              )}
 
-              <button
-                type='submit'
-                className='w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
-              >
-                Send Verification Code
-              </button>
+                {error && (
+                  <div className='text-sm text-destructive'>{error}</div>
+                )}
 
-              <p className='text-sm text-center text-zinc-600 dark:text-zinc-400'>
-                Already have an account?{' '}
-                <Link href='/signin' className='text-blue-600 hover:underline'>
-                  Sign In
-                </Link>
-              </p>
-            </form>
-          ) : (
-            /* Step 2: OTP Verification */
-            <div>
-              <div className='mb-4 text-sm text-zinc-600 dark:text-zinc-400'>
-                Enter the verification code sent to{' '}
-                <strong className='text-zinc-900 dark:text-zinc-100'>
-                  {email}
-                </strong>
-              </div>
+                <Button type='submit' className='w-full'>
+                  Send Verification Code
+                </Button>
 
+                <p className='text-sm text-center text-muted-foreground'>
+                  Already have an account?{' '}
+                  <Link href='/signin' className='text-primary hover:underline'>
+                    Sign In
+                  </Link>
+                </p>
+              </form>
+            ) : (
+              /* Step 2: OTP Verification */
               <form action={verifyOTP} className='space-y-4'>
                 <input type='hidden' name='email' value={email} />
                 <input type='hidden' name='otpId' value={otpId} />
 
-                <div>
-                  <label
-                    htmlFor='code'
-                    className='block text-sm font-medium mb-2'
-                  >
-                    Verification Code
-                  </label>
-                  <input
+                <div className='space-y-2'>
+                  <Label htmlFor='code'>Verification Code</Label>
+                  <Input
                     type='text'
                     id='code'
                     name='code'
                     placeholder='000000'
                     maxLength={6}
                     pattern='[0-9]{6}'
-                    className='w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-zinc-900 text-center text-2xl tracking-widest'
+                    className='text-center text-2xl tracking-widest'
                     required
                     autoComplete='one-time-code'
                   />
                 </div>
 
                 {error && (
-                  <div className='text-sm text-red-600 dark:text-red-400'>
-                    {error}
-                  </div>
+                  <div className='text-sm text-destructive'>{error}</div>
                 )}
 
                 <div className='flex gap-2'>
-                  <Link
-                    href='/signup'
-                    className='flex-1 px-4 py-2 text-center border border-zinc-300 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors'
-                  >
-                    Back
-                  </Link>
-                  <button
-                    type='submit'
-                    className='flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
-                  >
+                  <Button asChild variant='outline' className='flex-1'>
+                    <Link href='/signup'>Back</Link>
+                  </Button>
+                  <Button type='submit' className='flex-1'>
                     Verify & Sign Up
-                  </button>
+                  </Button>
                 </div>
               </form>
-            </div>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   )
