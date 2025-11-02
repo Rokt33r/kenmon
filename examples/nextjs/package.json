@@ -7,13 +7,11 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "client-ses": "github:aws-sdk/client-ses",
+    "@aws-sdk/client-ses": "^3.922.0",
     "drizzle-orm": "^0.44.7",
     "next": "16.0.0",
     "postgres": "^3.4.7",
@@ -21,12 +19,12 @@
     "react-dom": "19.2.0"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "drizzle-kit": "^0.31.6",
     "eslint": "^9",
     "eslint-config-next": "16.0.0",
     "tailwindcss": "^4",
