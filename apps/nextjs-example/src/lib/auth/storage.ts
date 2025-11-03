@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm'
 import { db } from '../db'
-import { users, userIdentifiers, sessions, otps } from '../db/schema'
+import { users, userIdentifiers, sessions, otps } from '../../../shared/db/schema'
 import { KenmonStorage, KenmonSession, KenmonIdentifier } from 'kenmon'
 import {
   KenmonEmailOTPStorage,

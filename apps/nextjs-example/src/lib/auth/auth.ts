@@ -3,7 +3,7 @@ import { KenmonEmailOTPProvider } from '@kenmon/email-otp-provider'
 import { KenmonNextJSAdapter } from '@kenmon/nextjs-adapter'
 import { config } from '../config'
 import { DrizzleSessionStorage, DrizzleEmailOTPStorage } from './storage'
-import { MockMailer } from './mockMailer'
+import { MockMailer } from '../../../shared/mailers/mockMailer'
 
 export const auth = new KenmonAuthService({
   secret: config.sessionSecret,

@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
-import * as schema from './schema'
+import * as schema from '../../../shared/db/schema'
 import { config } from '../config'
 
 const client = postgres(config.databaseUrl)
