@@ -1,11 +1,11 @@
 import { eq, and } from 'drizzle-orm'
-import { db } from '../db'
-import { users, userIdentifiers, sessions, otps } from '../../../shared/db/schema'
+import { users, userIdentifiers, sessions, otps } from '../db/schema'
 import { KenmonStorage, KenmonSession, KenmonIdentifier } from 'kenmon'
 import {
   KenmonEmailOTPStorage,
   KenmonEmailOTP,
 } from '@kenmon/email-otp-provider'
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 
 interface User {
   id: string
@@ -14,13 +14,15 @@ interface User {
 }
 
 export class DrizzleSessionStorage implements KenmonStorage<User> {
+  constructor(private db: PostgresJsDatabase<typeof import('../db/schema')>) {}
+
   // User operations
   async createUser(identifier: KenmonIdentifier, data: any): Promise<User> {
     // Create user
-    const [user] = await db.insert(users).values({}).returning()
+    const [user] = await this.db.insert(users).values({}).returning()
 
     // Create identifier entry
-    await db.insert(userIdentifiers).values({
+    await this.db.insert(userIdentifiers).values({
       userId: user.id,
       type: identifier.type,
       value: identifier.value,
@@ -31,7 +33,7 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
   }
 
   async getUserById(id: string): Promise<User | null> {
-    const [user] = await db
+    const [user] = await this.db
       .select()
       .from(users)
       .where(eq(users.id, id))
@@ -42,7 +44,7 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
   async getUserByIdentifier(
     identifier: KenmonIdentifier,
   ): Promise<User | null> {
-    const result = await db.query.userIdentifiers.findFirst({
+    const result = await this.db.query.userIdentifiers.findFirst({
       where: (userIdentifiers, { eq, and }) =>
         and(
           eq(userIdentifiers.type, identifier.type),
@@ -64,7 +66,7 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<KenmonSession> {
-    const [session] = await db
+    const [session] = await this.db
       .insert(sessions)
       .values({
         userId,
@@ -92,7 +94,7 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
   }
 
   async getSessionById(sessionId: string): Promise<KenmonSession | null> {
-    const [session] = await db
+    const [session] = await this.db
       .select()
       .from(sessions)
       .where(eq(sessions.id, sessionId))
@@ -119,11 +121,11 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
     sessionId: string,
     data: { expiresAt?: Date; refreshedAt?: Date; usedAt?: Date },
   ): Promise<void> {
-    await db.update(sessions).set(data).where(eq(sessions.id, sessionId))
+    await this.db.update(sessions).set(data).where(eq(sessions.id, sessionId))
   }
 
   async invalidateSession(sessionId: string): Promise<void> {
-    await db
+    await this.db
       .update(sessions)
       .set({
         invalidated: true,
@@ -133,7 +135,7 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
   }
 
   async invalidateAllUserSessions(userId: string): Promise<void> {
-    await db
+    await this.db
       .update(sessions)
       .set({
         invalidated: true,
@@ -144,12 +146,14 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
 }
 
 export class DrizzleEmailOTPStorage implements KenmonEmailOTPStorage {
+  constructor(private db: PostgresJsDatabase<typeof import('../db/schema')>) {}
+
   async createOTP(
     email: string,
     code: string,
     expiresAt: Date,
   ): Promise<KenmonEmailOTP> {
-    const [otp] = await db
+    const [otp] = await this.db
       .insert(otps)
       .values({
         email,
@@ -163,11 +167,11 @@ export class DrizzleEmailOTPStorage implements KenmonEmailOTPStorage {
   }
 
   async getOTPById(id: string): Promise<KenmonEmailOTP | null> {
-    const [otp] = await db.select().from(otps).where(eq(otps.id, id)).limit(1)
+    const [otp] = await this.db.select().from(otps).where(eq(otps.id, id)).limit(1)
     return otp || null
   }
 
   async markOTPAsUsed(id: string): Promise<void> {
-    await db.update(otps).set({ used: true }).where(eq(otps.id, id))
+    await this.db.update(otps).set({ used: true }).where(eq(otps.id, id))
   }
 }
