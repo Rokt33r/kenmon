@@ -1,5 +1,5 @@
 import { KenmonAuthService } from 'kenmon'
-import { EmailOTPAuthProvider } from '@kenmon/email-otp-provider'
+import { KenmonEmailOTPProvider } from '@kenmon/email-otp-provider'
 import { KenmonNextJSAdapter } from '@kenmon/nextjs-adapter'
 import { config } from '../config'
 import { KenmonDrizzleStorage } from './storage'
@@ -15,7 +15,7 @@ export const auth = new KenmonAuthService({
 })
 
 auth.registerProvider(
-  new EmailOTPAuthProvider({
+  new KenmonEmailOTPProvider({
     mailer: new MockMailer(),
     otpStorage: storage,
     otp: {

@@ -2,30 +2,37 @@ import crypto from 'crypto'
 import { isAfter, addSeconds } from 'date-fns'
 import { z } from 'zod'
 import {
-  KenmonAuthProvider,
+  KenmonProvider,
   KenmonPreparePayload,
   KenmonAuthenticatePayload,
   KenmonIdentifier,
   KenmonReturnType,
   KenmonMailer,
-  OTP,
   KenmonError,
   KenmonInvalidPayloadError,
 } from 'kenmon'
 
 // OTP-specific error with reason discriminator
-export type KenmonOTPErrorReason =
+export type KenmonEmailOTPErrorReason =
   | 'not-found'
   | 'expired'
   | 'invalid-code'
   | 'already-used'
   | 'email-mismatch'
 
-export class KenmonOTPError extends KenmonError {
-  readonly reason: KenmonOTPErrorReason
+export interface KenmonEmailOTP {
+  id: string
+  email: string
+  code: string
+  expiresAt: Date
+  used: boolean
+}
 
-  constructor(reason: KenmonOTPErrorReason) {
-    const messages: Record<KenmonOTPErrorReason, string> = {
+export class KenmonEmailOTPError extends KenmonError {
+  readonly reason: KenmonEmailOTPErrorReason
+
+  constructor(reason: KenmonEmailOTPErrorReason) {
+    const messages: Record<KenmonEmailOTPErrorReason, string> = {
       'not-found': 'OTP not found',
       expired: 'OTP has expired',
       'invalid-code': 'Invalid OTP code',
@@ -36,7 +43,7 @@ export class KenmonOTPError extends KenmonError {
     super(messages[reason])
     this.name = 'KenmonOTPError'
     this.reason = reason
-    Object.setPrototypeOf(this, KenmonOTPError.prototype)
+    Object.setPrototypeOf(this, KenmonEmailOTPError.prototype)
   }
 }
 
@@ -52,16 +59,20 @@ const emailOTPAuthenticateDataSchema = z.object({
 })
 
 // OTP Storage interface
-export interface KenmonOTPStorage {
-  createOTP(email: string, code: string, expiresAt: Date): Promise<OTP>
-  getOTPById(id: string): Promise<OTP | null>
+export interface KenmonEmailOTPStorage {
+  createOTP(
+    email: string,
+    code: string,
+    expiresAt: Date,
+  ): Promise<KenmonEmailOTP>
+  getOTPById(id: string): Promise<KenmonEmailOTP | null>
   markOTPAsUsed(id: string): Promise<void>
 }
 
 // EmailOTP Provider configuration
-export interface EmailOTPAuthProviderConfig {
+export interface KenmonEmailOTPProviderConfig {
   mailer: KenmonMailer
-  otpStorage: KenmonOTPStorage
+  otpStorage: KenmonEmailOTPStorage
   otp?: {
     ttl?: number // seconds, default 300 (5 minutes)
     length?: number // default 6
@@ -72,17 +83,17 @@ export interface EmailOTPAuthProviderConfig {
   }
 }
 
-export class EmailOTPAuthProvider extends KenmonAuthProvider {
+export class KenmonEmailOTPProvider extends KenmonProvider {
   readonly type = 'email-otp'
 
   private mailer: KenmonMailer
-  private otpStorage: KenmonOTPStorage
+  private otpStorage: KenmonEmailOTPStorage
   private otpTtl: number
   private otpLength: number
   private emailFrom: string
   private emailSubject: string
 
-  constructor(config: EmailOTPAuthProviderConfig) {
+  constructor(config: KenmonEmailOTPProviderConfig) {
     super()
     this.mailer = config.mailer
     this.otpStorage = config.otpStorage
@@ -155,27 +166,36 @@ export class EmailOTPAuthProvider extends KenmonAuthProvider {
       // Fetch OTP from storage
       const otp = await this.otpStorage.getOTPById(otpId)
       if (!otp) {
-        return { success: false, error: new KenmonOTPError('not-found') }
+        return { success: false, error: new KenmonEmailOTPError('not-found') }
       }
 
       // Verify OTP belongs to this email
       if (otp.email !== email) {
-        return { success: false, error: new KenmonOTPError('email-mismatch') }
+        return {
+          success: false,
+          error: new KenmonEmailOTPError('email-mismatch'),
+        }
       }
 
       // Check if OTP has been used
       if (otp.used) {
-        return { success: false, error: new KenmonOTPError('already-used') }
+        return {
+          success: false,
+          error: new KenmonEmailOTPError('already-used'),
+        }
       }
 
       // Check if OTP has expired
       if (isAfter(new Date(), otp.expiresAt)) {
-        return { success: false, error: new KenmonOTPError('expired') }
+        return { success: false, error: new KenmonEmailOTPError('expired') }
       }
 
       // Verify OTP code
       if (otp.code !== code) {
-        return { success: false, error: new KenmonOTPError('invalid-code') }
+        return {
+          success: false,
+          error: new KenmonEmailOTPError('invalid-code'),
+        }
       }
 
       // Mark OTP as used

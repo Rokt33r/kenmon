@@ -9,7 +9,7 @@ import {
   KenmonReturnType,
   KenmonSession,
   KenmonStorage,
-  KenmonAuthProvider,
+  KenmonProvider,
 } from './types'
 
 import {
@@ -33,7 +33,7 @@ export class KenmonAuthService<U> {
 
   storage: KenmonStorage<U>
   adapter: KenmonAdapter
-  providers: Map<string, KenmonAuthProvider>
+  providers: Map<string, KenmonProvider>
 
   constructor(config: KenmonConfig<U>) {
     this.secret = config.secret
@@ -50,7 +50,7 @@ export class KenmonAuthService<U> {
     this.providers = new Map()
   }
 
-  registerProvider(provider: KenmonAuthProvider): void {
+  registerProvider(provider: KenmonProvider): void {
     this.providers.set(provider.type, provider)
   }
 

@@ -104,15 +104,7 @@ export interface KenmonAdapter {
   redirect(url: string): Promise<void>
 }
 
-export interface OTP {
-  id: string
-  email: string
-  code: string
-  expiresAt: Date
-  used: boolean
-}
-
-export abstract class KenmonAuthProvider {
+export abstract class KenmonProvider {
   abstract readonly type: string
 
   prepare?(payload: KenmonPreparePayload): Promise<KenmonReturnType<any>>

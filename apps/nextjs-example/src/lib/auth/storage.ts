@@ -1,8 +1,11 @@
 import { eq, and } from 'drizzle-orm'
 import { db } from '../db'
 import { users, userIdentifiers, sessions, otps } from '../db/schema'
-import { KenmonStorage, KenmonSession, KenmonIdentifier, OTP } from 'kenmon'
-import { KenmonOTPStorage } from '@kenmon/email-otp-provider'
+import { KenmonStorage, KenmonSession, KenmonIdentifier } from 'kenmon'
+import {
+  KenmonEmailOTPStorage,
+  KenmonEmailOTP,
+} from '@kenmon/email-otp-provider'
 
 interface User {
   id: string
@@ -11,7 +14,7 @@ interface User {
 }
 
 export class KenmonDrizzleStorage
-  implements KenmonStorage<User>, KenmonOTPStorage
+  implements KenmonStorage<User>, KenmonEmailOTPStorage
 {
   // User operations
   async createUser(identifier: KenmonIdentifier, data: any): Promise<User> {
@@ -145,7 +148,11 @@ export class KenmonDrizzleStorage
   }
 
   // OTP operations
-  async createOTP(email: string, code: string, expiresAt: Date): Promise<OTP> {
+  async createOTP(
+    email: string,
+    code: string,
+    expiresAt: Date,
+  ): Promise<KenmonEmailOTP> {
     const [otp] = await db
       .insert(otps)
       .values({
@@ -159,7 +166,7 @@ export class KenmonDrizzleStorage
     return otp
   }
 
-  async getOTPById(id: string): Promise<OTP | null> {
+  async getOTPById(id: string): Promise<KenmonEmailOTP | null> {
     const [otp] = await db.select().from(otps).where(eq(otps.id, id)).limit(1)
     return otp || null
   }
