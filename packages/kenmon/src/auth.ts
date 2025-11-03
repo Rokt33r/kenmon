@@ -210,10 +210,14 @@ export class KenmonAuthService<U> {
     return { success: true, data: undefined }
   }
 
-  async signOut(): Promise<void> {
+  async signOut(options?: { allSessions?: boolean }): Promise<void> {
     const verifyResult = await this.verifySession()
     if (verifyResult.success) {
-      await this.storage.invalidateSession(verifyResult.data.id)
+      if (options?.allSessions) {
+        await this.storage.invalidateAllUserSessions(verifyResult.data.userId)
+      } else {
+        await this.storage.invalidateSession(verifyResult.data.id)
+      }
     }
     await this.adapter.deleteCookie(
       this.session.cookieName || defaultSessionCookieName,
