@@ -9,10 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default async function Home() {
   // Check authentication status
-  const session = await auth.verifySession()
+  const verifyResult = await auth.verifySession()
 
   // Fetch user identifiers if authenticated
   let identifiers: Array<{ type: string; value: string }> = []
+  const session = verifyResult.success ? verifyResult.data : null
 
   if (session) {
     identifiers = await db

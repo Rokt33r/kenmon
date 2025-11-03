@@ -14,8 +14,10 @@ export interface KenmonSession {
   token: string
   expiresAt: Date
   createdAt: Date
-  updatedAt: Date
+  refreshedAt: Date
+  usedAt: Date
   invalidated: boolean
+  invalidatedAt: Date | null
   ipAddress?: string
   userAgent?: string
 }
@@ -68,7 +70,7 @@ export interface KenmonStorage<U> {
   getSessionById(sessionId: string): Promise<KenmonSession | null>
   updateSession(
     sessionId: string,
-    data: { token: string; expiresAt: Date },
+    data: { expiresAt?: Date; refreshedAt?: Date; usedAt?: Date },
   ): Promise<void>
   invalidateSession(sessionId: string): Promise<void>
   invalidateAllUserSessions(userId: string): Promise<void>

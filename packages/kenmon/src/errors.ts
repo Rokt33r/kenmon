@@ -45,3 +45,27 @@ export class KenmonPrepareNotSupportedError extends KenmonError {
     Object.setPrototypeOf(this, KenmonPrepareNotSupportedError.prototype)
   }
 }
+
+export class KenmonSessionNotFoundError extends KenmonError {
+  constructor() {
+    super('No session cookie found')
+    this.name = 'KenmonSessionNotFoundError'
+    Object.setPrototypeOf(this, KenmonSessionNotFoundError.prototype)
+  }
+}
+
+export class KenmonInvalidSessionError extends KenmonError {
+  constructor() {
+    super('Invalid session')
+    this.name = 'KenmonInvalidSessionError'
+    Object.setPrototypeOf(this, KenmonInvalidSessionError.prototype)
+  }
+}
+
+export class KenmonSessionExpiredError extends KenmonError {
+  constructor() {
+    super('Session expired')
+    this.name = 'KenmonSessionExpiredError'
+    Object.setPrototypeOf(this, KenmonSessionExpiredError.prototype)
+  }
+}

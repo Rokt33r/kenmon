@@ -55,10 +55,12 @@ export const sessions = pgTable('sessions', {
   token: text('token').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   invalidated: boolean('invalidated').notNull().default(false),
+  invalidatedAt: timestamp('invalidated_at'),
   ipAddress: varchar('ip_address', { length: 45 }),
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  refreshedAt: timestamp('refreshed_at').notNull().defaultNow(),
+  usedAt: timestamp('used_at').notNull().defaultNow(),
 })
 
 export const otps = pgTable('otps', {

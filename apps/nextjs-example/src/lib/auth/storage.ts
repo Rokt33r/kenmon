@@ -82,8 +82,10 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
       token: session.token,
       expiresAt: session.expiresAt,
       createdAt: session.createdAt,
-      updatedAt: session.updatedAt,
+      refreshedAt: session.refreshedAt,
+      usedAt: session.usedAt,
       invalidated: session.invalidated,
+      invalidatedAt: session.invalidatedAt,
       ipAddress: session.ipAddress || undefined,
       userAgent: session.userAgent || undefined,
     }
@@ -104,8 +106,10 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
       token: session.token,
       expiresAt: session.expiresAt,
       createdAt: session.createdAt,
-      updatedAt: session.updatedAt,
+      refreshedAt: session.refreshedAt,
+      usedAt: session.usedAt,
       invalidated: session.invalidated,
+      invalidatedAt: session.invalidatedAt,
       ipAddress: session.ipAddress || undefined,
       userAgent: session.userAgent || undefined,
     }
@@ -113,15 +117,11 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
 
   async updateSession(
     sessionId: string,
-    data: { token: string; expiresAt: Date },
+    data: { expiresAt?: Date; refreshedAt?: Date; usedAt?: Date },
   ): Promise<void> {
     await db
       .update(sessions)
-      .set({
-        token: data.token,
-        expiresAt: data.expiresAt,
-        updatedAt: new Date(),
-      })
+      .set(data)
       .where(eq(sessions.id, sessionId))
   }
 
@@ -130,7 +130,7 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
       .update(sessions)
       .set({
         invalidated: true,
-        updatedAt: new Date(),
+        invalidatedAt: new Date(),
       })
       .where(eq(sessions.id, sessionId))
   }
@@ -140,7 +140,7 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
       .update(sessions)
       .set({
         invalidated: true,
-        updatedAt: new Date(),
+        invalidatedAt: new Date(),
       })
       .where(eq(sessions.userId, userId))
   }

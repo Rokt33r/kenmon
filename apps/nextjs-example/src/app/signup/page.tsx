@@ -31,8 +31,8 @@ export default async function SignUpPage({
   const error = params.error || ''
 
   // Check if already authenticated
-  const session = await auth.verifySession()
-  if (session) {
+  const verifyResult = await auth.verifySession()
+  if (verifyResult.success) {
     redirect('/')
   }
 

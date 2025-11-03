@@ -17,6 +17,9 @@ import {
   KenmonPrepareNotSupportedError,
   KenmonUserNotFoundError,
   KenmonUserAlreadyExistsError,
+  KenmonSessionNotFoundError,
+  KenmonInvalidSessionError,
+  KenmonSessionExpiredError,
 } from './errors'
 
 const defaultSessionCookieName = 'session'
@@ -152,12 +155,14 @@ export class KenmonAuthService<U> {
     return session
   }
 
-  async verifySession(): Promise<KenmonSession | null> {
+  async verifySession(): Promise<KenmonReturnType<KenmonSession>> {
     const cookieValue = await this.adapter.getCookie(
       this.session.cookieName || defaultSessionCookieName,
     )
 
-    if (!cookieValue) return null
+    if (!cookieValue) {
+      return { success: false, error: new KenmonSessionNotFoundError() }
+    }
 
     try {
       const decoded = jwt.verify(cookieValue, this.secret) as {
@@ -166,36 +171,49 @@ export class KenmonAuthService<U> {
       }
 
       const session = await this.storage.getSessionById(decoded.sessionId)
-      if (!session || session.token !== decoded.token || session.invalidated)
-        return null
-
-      if (isAfter(new Date(), session.expiresAt)) {
-        return null
+      if (!session || session.token !== decoded.token || session.invalidated) {
+        return { success: false, error: new KenmonInvalidSessionError() }
       }
 
-      return session
+      if (isAfter(new Date(), session.expiresAt)) {
+        return { success: false, error: new KenmonSessionExpiredError() }
+      }
+
+      // Update usedAt timestamp
+      await this.storage.updateSession(session.id, {
+        usedAt: new Date(),
+      })
+
+      return { success: true, data: session }
     } catch {
-      return null
+      return { success: false, error: new KenmonInvalidSessionError() }
     }
   }
 
-  async refreshSession(sessionId: string): Promise<void> {
+  async refreshSession(): Promise<KenmonReturnType<void>> {
+    const verifyResult = await this.verifySession()
+    if (!verifyResult.success) {
+      return { success: false, error: verifyResult.error }
+    }
+
+    const session = verifyResult.data
     const now = new Date()
     const newExpiresAt = addSeconds(now, this.session.ttl)
-    const newToken = this.generateSessionToken()
 
-    await this.storage.updateSession(sessionId, {
-      token: newToken,
+    await this.storage.updateSession(session.id, {
       expiresAt: newExpiresAt,
+      refreshedAt: now,
     })
 
-    await this.setSessionCookie(sessionId, newToken)
+    await this.setSessionCookie(session.id, session.token)
+
+    return { success: true, data: undefined }
   }
 
   async signOut(): Promise<void> {
-    const session = await this.verifySession()
-    if (session != null) {
-      await this.storage.invalidateSession(session.id)
+    const verifyResult = await this.verifySession()
+    if (verifyResult.success) {
+      await this.storage.invalidateSession(verifyResult.data.id)
     }
     await this.adapter.deleteCookie(
       this.session.cookieName || defaultSessionCookieName,
