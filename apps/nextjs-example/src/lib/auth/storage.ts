@@ -13,9 +13,7 @@ interface User {
   updatedAt: Date
 }
 
-export class KenmonDrizzleStorage
-  implements KenmonStorage<User>, KenmonEmailOTPStorage
-{
+export class DrizzleSessionStorage implements KenmonStorage<User> {
   // User operations
   async createUser(identifier: KenmonIdentifier, data: any): Promise<User> {
     // Create user
@@ -146,8 +144,9 @@ export class KenmonDrizzleStorage
       })
       .where(eq(sessions.userId, userId))
   }
+}
 
-  // OTP operations
+export class DrizzleEmailOTPStorage implements KenmonEmailOTPStorage {
   async createOTP(
     email: string,
     code: string,
