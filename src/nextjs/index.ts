@@ -1,1 +1,0 @@
-export { KenmonNextJSAdapter } from './adapter'
