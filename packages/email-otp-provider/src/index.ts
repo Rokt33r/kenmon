@@ -79,7 +79,9 @@ export interface KenmonEmailOTPProviderConfig {
   }
   email?: {
     from: string
-    subject?: string
+    subject?: string | ((code: string, otpTtl: number) => string)
+    textContent?: (code: string, otpTtl: number) => string
+    htmlContent?: (code: string, otpTtl: number) => string
   }
 }
 
@@ -91,7 +93,9 @@ export class KenmonEmailOTPProvider extends KenmonProvider {
   private otpTtl: number
   private otpLength: number
   private emailFrom: string
-  private emailSubject: string
+  private emailSubject: string | ((code: string, otpTtl: number) => string)
+  private emailTextContent?: (code: string, otpTtl: number) => string
+  private emailHtmlContent?: (code: string, otpTtl: number) => string
 
   constructor(config: KenmonEmailOTPProviderConfig) {
     super()
@@ -101,6 +105,8 @@ export class KenmonEmailOTPProvider extends KenmonProvider {
     this.otpLength = config.otp?.length ?? 6
     this.emailFrom = config.email?.from ?? 'noreply@example.com'
     this.emailSubject = config.email?.subject ?? 'Your verification code'
+    this.emailTextContent = config.email?.textContent
+    this.emailHtmlContent = config.email?.htmlContent
   }
 
   async prepare(
@@ -127,19 +133,33 @@ export class KenmonEmailOTPProvider extends KenmonProvider {
       // Store OTP
       const otp = await this.otpStorage.createOTP(email, code, expiresAt)
 
-      // Send email
-      await this.mailer.sendEmail({
-        from: this.emailFrom,
-        to: email,
-        subject: this.emailSubject,
-        textContent: `Your verification code is: ${code}\n\nThis code will expire in ${Math.floor(this.otpTtl / 60)} minutes.`,
-        htmlContent: `
+      // Generate email content
+      const subject =
+        typeof this.emailSubject === 'function'
+          ? this.emailSubject(code, this.otpTtl)
+          : this.emailSubject
+
+      const textContent = this.emailTextContent
+        ? this.emailTextContent(code, this.otpTtl)
+        : `Your verification code is: ${code}\n\nThis code will expire in ${Math.floor(this.otpTtl / 60)} minutes.`
+
+      const htmlContent = this.emailHtmlContent
+        ? this.emailHtmlContent(code, this.otpTtl)
+        : `
           <div>
             <p>Your verification code is:</p>
             <h2 style="font-size: 32px; letter-spacing: 8px; font-weight: bold;">${code}</h2>
             <p>This code will expire in ${Math.floor(this.otpTtl / 60)} minutes.</p>
           </div>
-        `,
+        `
+
+      // Send email
+      await this.mailer.sendEmail({
+        from: this.emailFrom,
+        to: email,
+        subject,
+        textContent,
+        htmlContent,
       })
 
       return { success: true, data: { otpId: otp.id } }
