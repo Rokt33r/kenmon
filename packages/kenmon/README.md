@@ -49,7 +49,10 @@ class MySessionStorage implements KenmonStorage<User> {
   async getSessionById(sessionId: string): Promise<KenmonSession | null> {
     /* ... */
   }
-  async updateSession(sessionId, data): Promise<void> {
+  async updateSession(
+    sessionId: string,
+    data: { expiresAt?: Date; refreshedAt?: Date; usedAt?: Date },
+  ): Promise<void> {
     /* ... */
   }
   async invalidateSession(sessionId: string): Promise<void> {
@@ -100,14 +103,14 @@ auth.registerProvider(
 
 ```typescript
 // 1. Prepare (send OTP email)
-await auth.prepare({
+const prepareResult = await auth.prepare({
   type: 'email-otp',
   intent: 'sign-in',
   data: { email: 'user@example.com' },
 })
 
 // 2. Authenticate (verify OTP)
-const result = await auth.authenticate({
+const authResult = await auth.authenticate({
   type: 'email-otp',
   intent: 'sign-in',
   data: { email, otpId, code },
@@ -115,14 +118,47 @@ const result = await auth.authenticate({
   userAgent,
 })
 
+if (authResult.success) {
+  // Session created automatically
+}
+
 // 3. Verify session
-const session = await auth.verifySession()
+const sessionResult = await auth.verifySession()
+if (sessionResult.success) {
+  const session = sessionResult.data
+  // Use session...
+}
 
 // 4. Refresh session
-await auth.refreshSession(session.id)
+const refreshResult = await auth.refreshSession()
+if (refreshResult.success) {
+  // Session refreshed
+}
 
 // 5. Sign out
 await auth.signOut()
+// Or sign out from all devices
+await auth.signOut({ allSessions: true })
+```
+
+## Session Schema
+
+The `KenmonSession` interface includes the following fields:
+
+```typescript
+interface KenmonSession {
+  id: string
+  userId: string
+  token: string
+  expiresAt: Date
+  createdAt: Date
+  refreshedAt: Date // Updated when session is refreshed
+  usedAt: Date // Updated when session is verified
+  invalidated: boolean
+  invalidatedAt?: Date // Set when session is invalidated
+  ipAddress?: string
+  userAgent?: string
+}
 ```
 
 ## Configuration
