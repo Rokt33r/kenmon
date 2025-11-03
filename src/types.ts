@@ -48,7 +48,7 @@ export interface KenmonConfig<U> {
     length?: number
   }
   storage: KenmonStorage<U>
-  framework: KenmonFrameworkAdapter
+  adapter: KenmonAdapter
 }
 
 // Storage interface
@@ -97,7 +97,7 @@ export interface CookieOptions {
   path?: string
 }
 
-export interface KenmonFrameworkAdapter {
+export interface KenmonAdapter {
   setCookie(name: string, value: string, options?: CookieOptions): Promise<void>
   getCookie(name: string): Promise<string | undefined>
   deleteCookie(name: string): Promise<void>

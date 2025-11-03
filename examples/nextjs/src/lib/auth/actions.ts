@@ -15,19 +15,16 @@ export async function refreshSession(): Promise<{
   error?: string
 }> {
   try {
-    // Get current session
     const session = await auth.verifySession()
 
     if (!session) {
       return { success: false, error: 'No active session' }
     }
 
-    // Check if session needs refresh
     if (!auth.needsRefresh(session.updatedAt)) {
       return { success: true }
     }
 
-    // Refresh the session
     await auth.refreshSession(session.id)
 
     return { success: true }

@@ -3,7 +3,7 @@ import { addSeconds, isAfter, differenceInSeconds } from 'date-fns'
 import jwt from 'jsonwebtoken'
 import {
   KenmonConfig,
-  KenmonFrameworkAdapter,
+  KenmonAdapter,
   KenmonPreparePayload,
   KenmonAuthenticatePayload,
   KenmonReturnType,
@@ -32,7 +32,7 @@ export class KenmonAuthService<U> {
   }
 
   storage: KenmonStorage<U>
-  framework: KenmonFrameworkAdapter
+  adapter: KenmonAdapter
   providers: Map<string, KenmonAuthProvider>
 
   constructor(config: KenmonConfig<U>) {
@@ -46,7 +46,7 @@ export class KenmonAuthService<U> {
     }
 
     this.storage = config.storage
-    this.framework = config.framework
+    this.adapter = config.adapter
     this.providers = new Map()
   }
 
@@ -103,7 +103,11 @@ export class KenmonAuthService<U> {
 
       // Create session
       const userId = (user as any).id
-      const session = await this.createSession(userId, payload.ipAddress, payload.userAgent)
+      const session = await this.createSession(
+        userId,
+        payload.ipAddress,
+        payload.userAgent,
+      )
       return { success: true, data: session }
     } else {
       // sign-up
@@ -120,7 +124,11 @@ export class KenmonAuthService<U> {
       const user = await this.storage.createUser(identifier, payload.data)
 
       // Create session
-      const session = await this.createSession((user as any).id, payload.ipAddress, payload.userAgent)
+      const session = await this.createSession(
+        (user as any).id,
+        payload.ipAddress,
+        payload.userAgent,
+      )
       return { success: true, data: session }
     }
   }
@@ -147,7 +155,7 @@ export class KenmonAuthService<U> {
   }
 
   async verifySession(): Promise<KenmonSession | null> {
-    const cookieValue = await this.framework.getCookie(
+    const cookieValue = await this.adapter.getCookie(
       this.session.cookieName || defaultSessionCookieName,
     )
 
@@ -196,7 +204,7 @@ export class KenmonAuthService<U> {
     if (session != null) {
       await this.storage.invalidateSession(session.id)
     }
-    await this.framework.deleteCookie(
+    await this.adapter.deleteCookie(
       this.session.cookieName || defaultSessionCookieName,
     )
   }
@@ -214,7 +222,7 @@ export class KenmonAuthService<U> {
       algorithm: 'HS256',
     })
 
-    await this.framework.setCookie(
+    await this.adapter.setCookie(
       this.session.cookieName || defaultSessionCookieName,
       jwtToken,
       {

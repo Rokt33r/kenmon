@@ -1,1 +1,1 @@
-export { NextJSFrameworkAdapter } from './framework'
+export { KenmonNextJSAdapter } from './adapter'
