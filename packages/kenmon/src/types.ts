@@ -38,7 +38,6 @@ export interface KenmonConfig<U> {
   secret: string
   session?: {
     ttl?: number // seconds
-    refreshInterval?: number // seconds
     cookieName?: string
     secure?: boolean
     sameSite?: 'lax' | 'strict' | 'none'
@@ -101,7 +100,6 @@ export interface KenmonAdapter {
   setCookie(name: string, value: string, options?: CookieOptions): Promise<void>
   getCookie(name: string): Promise<string | undefined>
   deleteCookie(name: string): Promise<void>
-  redirect(url: string): Promise<void>
 }
 
 export abstract class KenmonProvider {

@@ -1,5 +1,4 @@
 import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { KenmonAdapter, CookieOptions } from 'kenmon'
 
 export class KenmonNextJSAdapter implements KenmonAdapter {
@@ -27,9 +26,5 @@ export class KenmonNextJSAdapter implements KenmonAdapter {
   async deleteCookie(name: string): Promise<void> {
     const cookieStore = await cookies()
     cookieStore.delete(name)
-  }
-
-  async redirect(url: string): Promise<void> {
-    redirect(url)
   }
 }

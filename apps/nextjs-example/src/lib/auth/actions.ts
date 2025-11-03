@@ -3,10 +3,10 @@
 import { auth } from './auth'
 
 /**
- * Server action to refresh the current session if needed.
+ * Server action to refresh the current session.
  *
- * This checks if the session needs refreshing based on the configured
- * refresh interval, and updates the session token and expiry if needed.
+ * Updates the session token and expiry. Timing logic is handled
+ * by the SessionRefresh component on the client side.
  *
  * @returns Object with success status and optional error message
  */
@@ -19,10 +19,6 @@ export async function refreshSession(): Promise<{
 
     if (!session) {
       return { success: false, error: 'No active session' }
-    }
-
-    if (!auth.needsRefresh(session.updatedAt)) {
-      return { success: true }
     }
 
     await auth.refreshSession(session.id)

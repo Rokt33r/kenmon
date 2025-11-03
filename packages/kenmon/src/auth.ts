@@ -1,5 +1,5 @@
 import crypto from 'crypto'
-import { addSeconds, isAfter, differenceInSeconds } from 'date-fns'
+import { addSeconds, isAfter } from 'date-fns'
 import jwt from 'jsonwebtoken'
 import {
   KenmonConfig,
@@ -25,7 +25,6 @@ export class KenmonAuthService<U> {
   secret: string
   session: {
     ttl: number
-    refreshInterval: number
     cookieName: string
     secure: boolean
     sameSite: 'lax' | 'strict' | 'none'
@@ -39,7 +38,6 @@ export class KenmonAuthService<U> {
     this.secret = config.secret
     this.session = {
       ttl: config.session?.ttl ?? 14 * 24 * 60 * 60,
-      refreshInterval: config.session?.refreshInterval ?? 1 * 24 * 60 * 60,
       cookieName: config.session?.cookieName ?? 'session',
       secure: config.session?.secure ?? process.env.NODE_ENV === 'production',
       sameSite: config.session?.sameSite ?? 'lax',
@@ -179,11 +177,6 @@ export class KenmonAuthService<U> {
     } catch {
       return null
     }
-  }
-
-  needsRefresh(updatedAt: Date): boolean {
-    const sessionAge = differenceInSeconds(new Date(), updatedAt)
-    return sessionAge > this.session.refreshInterval
   }
 
   async refreshSession(sessionId: string): Promise<void> {
