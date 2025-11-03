@@ -119,10 +119,7 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
     sessionId: string,
     data: { expiresAt?: Date; refreshedAt?: Date; usedAt?: Date },
   ): Promise<void> {
-    await db
-      .update(sessions)
-      .set(data)
-      .where(eq(sessions.id, sessionId))
+    await db.update(sessions).set(data).where(eq(sessions.id, sessionId))
   }
 
   async invalidateSession(sessionId: string): Promise<void> {
