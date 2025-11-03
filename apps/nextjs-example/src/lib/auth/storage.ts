@@ -85,9 +85,9 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
       refreshedAt: session.refreshedAt,
       usedAt: session.usedAt,
       invalidated: session.invalidated,
-      invalidatedAt: session.invalidatedAt,
-      ipAddress: session.ipAddress || undefined,
-      userAgent: session.userAgent || undefined,
+      invalidatedAt: session.invalidatedAt ?? undefined,
+      ipAddress: session.ipAddress ?? undefined,
+      userAgent: session.userAgent ?? undefined,
     }
   }
 
@@ -109,9 +109,9 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
       refreshedAt: session.refreshedAt,
       usedAt: session.usedAt,
       invalidated: session.invalidated,
-      invalidatedAt: session.invalidatedAt,
-      ipAddress: session.ipAddress || undefined,
-      userAgent: session.userAgent || undefined,
+      invalidatedAt: session.invalidatedAt ?? undefined,
+      ipAddress: session.ipAddress ?? undefined,
+      userAgent: session.userAgent ?? undefined,
     }
   }
 

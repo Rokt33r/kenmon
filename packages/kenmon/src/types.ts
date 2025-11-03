@@ -17,7 +17,7 @@ export interface KenmonSession {
   refreshedAt: Date
   usedAt: Date
   invalidated: boolean
-  invalidatedAt: Date | null
+  invalidatedAt?: Date
   ipAddress?: string
   userAgent?: string
 }
