@@ -1,6 +1,6 @@
-# Kenmon Next.js Example
+# Next.js Example
 
-This is an example Next.js application demonstrating the Kenmon authentication library with PostgreSQL and Drizzle ORM.
+Full implementation of Kenmon authentication in a Next.js application with PostgreSQL and Drizzle ORM.
 
 ## Prerequisites
 
@@ -108,6 +108,59 @@ The application uses the following tables:
 - `used` (boolean)
 - `created_at` (timestamp)
 
+## Key Features
+
+### Session Refresh
+
+Client-side automatic session refresh using the `SessionRefresh` component:
+
+```tsx
+// src/app/layout.tsx
+<SessionRefresh refreshInterval={86400} />
+```
+
+The component automatically refreshes sessions based on the configured interval (24 hours by default).
+
+### IP Address Tracking
+
+Sessions capture IP address from request headers:
+
+```typescript
+// src/lib/auth/utils.ts
+export function getIPAddress(headers: Headers): string | undefined {
+  return (
+    headers.get('x-forwarded-for')?.split(',')[0] ||
+    headers.get('x-real-ip') ||
+    undefined
+  )
+}
+```
+
+### Storage Implementation
+
+Separate storage classes for sessions and OTP using Drizzle ORM:
+
+- `DrizzleSessionStorage` - User and session persistence
+- `DrizzleEmailOTPStorage` - OTP persistence
+
+See `src/lib/auth/storage.ts` for the full implementation.
+
+## Project Structure
+
+```
+src/
+├── app/              # Next.js app router pages
+├── components/       # React components (SessionRefresh, UI)
+└── lib/
+    ├── auth/         # Auth configuration and storage
+    │   ├── auth.ts   # Kenmon setup
+    │   ├── storage.ts # Drizzle storage implementations
+    │   ├── actions.ts # Server actions
+    │   └── utils.ts  # Helper functions
+    ├── db/           # Database setup and schema
+    └── config.ts     # App configuration
+```
+
 ## Stopping the Database
 
 To stop the PostgreSQL container:
@@ -121,3 +174,9 @@ To stop and remove all data:
 ```bash
 docker-compose down -v
 ```
+
+## See Also
+
+- [kenmon](../../packages/kenmon) - Core authentication service
+- [@kenmon/nextjs-adapter](../../packages/nextjs-adapter) - Next.js adapter
+- [@kenmon/email-otp-provider](../../packages/email-otp-provider) - Email OTP provider
