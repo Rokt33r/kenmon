@@ -1,5 +1,5 @@
 {
-  "name": "nextjs",
+  "name": "kenmon-nextjs-example",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,11 +12,14 @@
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.922.0",
+    "@kenmon/email-otp-provider": "workspace:*",
+    "@kenmon/nextjs-adapter": "workspace:*",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.44.7",
+    "kenmon": "workspace:*",
     "lucide-react": "^0.552.0",
     "next": "16.0.0",
     "postgres": "^3.4.7",

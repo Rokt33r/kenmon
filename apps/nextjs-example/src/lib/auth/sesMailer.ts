@@ -4,7 +4,7 @@ import {
   SendEmailCommand,
   SendEmailCommandInput,
 } from '@aws-sdk/client-ses'
-import { KenmonMailer, KenmonSendEmailParams } from '../../../../../src/types'
+import { KenmonMailer, KenmonSendEmailParams } from 'kenmon'
 
 interface KenmonAWSSESMailerConfig {
   region: string

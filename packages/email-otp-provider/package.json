@@ -1,0 +1,50 @@
+{
+  "name": "@kenmon/email-otp-provider",
+  "version": "0.0.3",
+  "description": "Email OTP authentication provider for Kenmon",
+  "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "authentication",
+    "auth",
+    "otp",
+    "email",
+    "kenmon"
+  ],
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "scripts": {
+    "test": "tsc --noEmit",
+    "build": "npm run build:types && npm run build:esm && npm run build:cjs",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
+    "build:esm": "tsc --module es2020 --moduleResolution bundler --outDir dist/esm",
+    "build:cjs": "tsc --module commonjs --moduleResolution node --outDir dist/cjs && echo '{\"type\": \"commonjs\"}' > dist/cjs/package.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "zod": "^4.1.12"
+  },
+  "peerDependencies": {
+    "kenmon": "^0.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "kenmon": "workspace:*",
+    "typescript": "^5.0.0"
+  }
+}

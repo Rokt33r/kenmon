@@ -1,0 +1,46 @@
+{
+  "name": "kenmon",
+  "version": "0.0.3",
+  "description": "Portable authentication module - Core package",
+  "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "authentication",
+    "auth",
+    "typescript",
+    "portable"
+  ],
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "scripts": {
+    "test": "tsc --noEmit",
+    "build": "npm run build:types && npm run build:esm && npm run build:cjs",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
+    "build:esm": "tsc --module es2020 --moduleResolution bundler --outDir dist/esm",
+    "build:cjs": "tsc --module commonjs --moduleResolution node --outDir dist/cjs && echo '{\"type\": \"commonjs\"}' > dist/cjs/package.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
