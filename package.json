@@ -42,6 +42,7 @@
   "scripts": {
     "format": "pretty-quick --write",
     "format:all": "prettier --write .",
+    "test": "tsc --noEmit",
     "build": "npm run build:types && npm run build:esm && npm run build:cjs",
     "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
     "build:esm": "tsc --module es2020 --moduleResolution bundler --outDir dist/esm",
