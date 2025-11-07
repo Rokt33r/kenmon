@@ -1,7 +1,7 @@
 import { eq, and } from 'drizzle-orm'
 import { users, userIdentifiers, sessions, otps } from '../db/schema'
-import { KenmonStorage, KenmonSession, KenmonIdentifier } from 'kenmon'
-import {
+import type { KenmonStorage, KenmonSession, KenmonIdentifier } from 'kenmon'
+import type {
   KenmonEmailOTPStorage,
   KenmonEmailOTP,
 } from '@kenmon/email-otp-provider'

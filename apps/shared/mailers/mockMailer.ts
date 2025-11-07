@@ -1,4 +1,5 @@
-import { KenmonMailer, KenmonSendEmailParams } from 'kenmon'
+import { KenmonMailer } from 'kenmon'
+import type { KenmonSendEmailParams } from 'kenmon'
 
 export class MockMailer extends KenmonMailer {
   async sendEmail({

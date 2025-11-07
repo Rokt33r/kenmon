@@ -1,0 +1,12 @@
+{
+  "name": "@kenmon-apps/shared",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "drizzle-orm": "^0.44.7",
+    "@aws-sdk/client-ses": "^3.922.0",
+    "kenmon": "workspace:*",
+    "@kenmon/email-otp-provider": "workspace:*"
+  }
+}

@@ -5,8 +5,8 @@ import { config } from '../config'
 import {
   DrizzleSessionStorage,
   DrizzleEmailOTPStorage,
-} from '../../../shared/storage/drizzleStorage'
-import { MockMailer } from '../../../shared/mailers/mockMailer'
+} from '@shared/storage/drizzleStorage'
+import { MockMailer } from '@shared/mailers/mockMailer'
 import { db } from '../db'
 
 export const auth = new KenmonAuthService({
