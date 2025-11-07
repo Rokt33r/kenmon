@@ -9,6 +9,8 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { provideRequestContext } from "./lib/context";
+import { SessionRefresh } from "./components/SessionRefresh";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -33,6 +35,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        <SessionRefresh />
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -44,6 +47,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return <Outlet />;
 }
+
+export const middleware: Route.MiddlewareFunction[] = [
+  async ({ request }, next) => {
+    return provideRequestContext(request, async () => {
+      return await next();
+    });
+  },
+];
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = "Oops!";
