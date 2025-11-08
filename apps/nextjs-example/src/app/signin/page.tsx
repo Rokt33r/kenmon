@@ -21,6 +21,7 @@ export default async function SignInPage({
     step?: string
     email?: string
     otpId?: string
+    signature?: string
     error?: string
   }>
 }) {
@@ -28,6 +29,7 @@ export default async function SignInPage({
   const step = params.step || 'email'
   const email = params.email || ''
   const otpId = params.otpId || ''
+  const signature = params.signature || ''
   const error = params.error || ''
 
   // Check if already authenticated
@@ -58,7 +60,7 @@ export default async function SignInPage({
     }
 
     redirect(
-      `/signin?step=otp&email=${encodeURIComponent(email)}&otpId=${result.data.otpId}`,
+      `/signin?step=otp&email=${encodeURIComponent(email)}&otpId=${result.data.otpId}&signature=${encodeURIComponent(result.data.signature)}`,
     )
   }
 
@@ -146,6 +148,18 @@ export default async function SignInPage({
               <form action={verifyOTP} className='space-y-4'>
                 <input type='hidden' name='email' value={email} />
                 <input type='hidden' name='otpId' value={otpId} />
+
+                {signature && (
+                  <div className='rounded-lg border bg-muted p-4 text-center'>
+                    <p className='text-sm text-muted-foreground mb-1'>
+                      Signature
+                    </p>
+                    <p className='font-semibold text-lg'>{signature}</p>
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      Verify this matches the signature in your email
+                    </p>
+                  </div>
+                )}
 
                 <div className='space-y-2'>
                   <Label htmlFor='code'>Verification Code</Label>

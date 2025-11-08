@@ -67,6 +67,7 @@ export const otps = pgTable('otps', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).notNull(),
   code: varchar('code', { length: 10 }).notNull(),
+  signature: varchar('signature', { length: 100 }).notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   used: boolean('used').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),

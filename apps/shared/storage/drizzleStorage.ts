@@ -152,12 +152,14 @@ export class DrizzleEmailOTPStorage implements KenmonEmailOTPStorage {
     email: string,
     code: string,
     expiresAt: Date,
+    signature: string,
   ): Promise<KenmonEmailOTP> {
     const [otp] = await this.db
       .insert(otps)
       .values({
         email,
         code,
+        signature,
         expiresAt,
         used: false,
       })

@@ -46,7 +46,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     throw redirect(
-      `/signup?step=otp&email=${encodeURIComponent(email)}&otpId=${result.data.otpId}`,
+      `/signup?step=otp&email=${encodeURIComponent(email)}&otpId=${result.data.otpId}&signature=${encodeURIComponent(result.data.signature)}`,
     )
   }
 
@@ -90,6 +90,7 @@ export default function SignUpPage() {
   const step = searchParams.get('step') || 'email'
   const email = searchParams.get('email') || ''
   const otpId = searchParams.get('otpId') || ''
+  const signature = searchParams.get('signature') || ''
   const error = searchParams.get('error') || ''
 
   return (
@@ -143,6 +144,18 @@ export default function SignUpPage() {
                 <input type='hidden' name='intent' value='verifyOTP' />
                 <input type='hidden' name='email' value={email} />
                 <input type='hidden' name='otpId' value={otpId} />
+
+                {signature && (
+                  <div className='rounded-lg border bg-muted p-4 text-center'>
+                    <p className='text-sm text-muted-foreground mb-1'>
+                      Signature
+                    </p>
+                    <p className='font-semibold text-lg'>{signature}</p>
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      Verify this matches the signature in your email
+                    </p>
+                  </div>
+                )}
 
                 <div className='space-y-2'>
                   <Label htmlFor='code'>Verification Code</Label>

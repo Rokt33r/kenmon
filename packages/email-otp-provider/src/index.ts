@@ -11,6 +11,7 @@ import {
   KenmonError,
   KenmonInvalidPayloadError,
 } from 'kenmon'
+import { generateSignature } from './signature'
 
 // OTP-specific error with reason discriminator
 export type KenmonEmailOTPErrorReason =
@@ -24,6 +25,7 @@ export interface KenmonEmailOTP {
   id: string
   email: string
   code: string
+  signature: string
   expiresAt: Date
   used: boolean
 }
@@ -64,6 +66,7 @@ export interface KenmonEmailOTPStorage {
     email: string,
     code: string,
     expiresAt: Date,
+    signature: string,
   ): Promise<KenmonEmailOTP>
   getOTPById(id: string): Promise<KenmonEmailOTP | null>
   markOTPAsUsed(id: string): Promise<void>
@@ -79,9 +82,9 @@ export interface KenmonEmailOTPProviderConfig {
   }
   email?: {
     from: string
-    subject?: string | ((code: string, otpTtl: number) => string)
-    textContent?: (code: string, otpTtl: number) => string
-    htmlContent?: (code: string, otpTtl: number) => string
+    subject?: string | ((code: string, signature: string, otpTtl: number) => string)
+    textContent?: (code: string, signature: string, otpTtl: number) => string
+    htmlContent?: (code: string, signature: string, otpTtl: number) => string
   }
 }
 
@@ -93,9 +96,9 @@ export class KenmonEmailOTPProvider extends KenmonProvider {
   private otpTtl: number
   private otpLength: number
   private emailFrom: string
-  private emailSubject: string | ((code: string, otpTtl: number) => string)
-  private emailTextContent?: (code: string, otpTtl: number) => string
-  private emailHtmlContent?: (code: string, otpTtl: number) => string
+  private emailSubject: string | ((code: string, signature: string, otpTtl: number) => string)
+  private emailTextContent?: (code: string, signature: string, otpTtl: number) => string
+  private emailHtmlContent?: (code: string, signature: string, otpTtl: number) => string
 
   constructor(config: KenmonEmailOTPProviderConfig) {
     super()
@@ -111,7 +114,7 @@ export class KenmonEmailOTPProvider extends KenmonProvider {
 
   async prepare(
     payload: KenmonPreparePayload,
-  ): Promise<KenmonReturnType<{ otpId: string }>> {
+  ): Promise<KenmonReturnType<{ otpId: string; signature: string }>> {
     // Validate payload with Zod
     const result = emailOTPPrepareDataSchema.safeParse(payload.data)
     if (!result.success) {
@@ -127,28 +130,32 @@ export class KenmonEmailOTPProvider extends KenmonProvider {
       // Generate OTP code
       const code = this.generateOTPCode()
 
+      // Generate signature
+      const signature = generateSignature()
+
       // Calculate expiry
       const expiresAt = addSeconds(new Date(), this.otpTtl)
 
       // Store OTP
-      const otp = await this.otpStorage.createOTP(email, code, expiresAt)
+      const otp = await this.otpStorage.createOTP(email, code, expiresAt, signature)
 
       // Generate email content
       const subject =
         typeof this.emailSubject === 'function'
-          ? this.emailSubject(code, this.otpTtl)
+          ? this.emailSubject(code, signature, this.otpTtl)
           : this.emailSubject
 
       const textContent = this.emailTextContent
-        ? this.emailTextContent(code, this.otpTtl)
-        : `Your verification code is: ${code}\n\nThis code will expire in ${Math.floor(this.otpTtl / 60)} minutes.`
+        ? this.emailTextContent(code, signature, this.otpTtl)
+        : `Your verification code is: ${code}\n\nSignature: ${signature}\n\nThis code will expire in ${Math.floor(this.otpTtl / 60)} minutes.`
 
       const htmlContent = this.emailHtmlContent
-        ? this.emailHtmlContent(code, this.otpTtl)
+        ? this.emailHtmlContent(code, signature, this.otpTtl)
         : `
           <div>
             <p>Your verification code is:</p>
             <h2 style="font-size: 32px; letter-spacing: 8px; font-weight: bold;">${code}</h2>
+            <p><strong>Signature:</strong> ${signature}</p>
             <p>This code will expire in ${Math.floor(this.otpTtl / 60)} minutes.</p>
           </div>
         `
@@ -162,7 +169,7 @@ export class KenmonEmailOTPProvider extends KenmonProvider {
         htmlContent,
       })
 
-      return { success: true, data: { otpId: otp.id } }
+      return { success: true, data: { otpId: otp.id, signature: otp.signature } }
     } catch (error) {
       return { success: false, error: error as Error }
     }
