@@ -132,7 +132,6 @@ Client-side automatic session refresh using the `SessionRefresh` component:
 ```tsx
 // app/root.tsx
 import { SessionRefresh } from '@kenmon/react-router-adapter'
-
 ;<SessionRefresh method='post' action='/api/refresh' refreshInterval={86400} />
 ```
 
