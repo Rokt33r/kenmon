@@ -20,13 +20,8 @@ auth.registerProvider(
   new KenmonEmailOTPProvider({
     mailer: new MockMailer(),
     otpStorage: new DrizzleEmailOTPStorage(db),
-    otp: {
-      ttl: 300,
-      length: 6,
-    },
-    email: {
-      from: 'noreply@kenmon.dev',
-      subject: 'Your verification code',
-    },
+    otpTtl: 300,
+    otpLength: 6,
+    emailFrom: 'noreply@kenmon.dev',
   }),
 )
