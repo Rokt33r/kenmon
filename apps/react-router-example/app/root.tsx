@@ -9,7 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import { provideRequestContext } from "./lib/context";
+import { kenmonReactRouterMiddleware } from "./lib/context";
 import { SessionRefresh } from "./components/SessionRefresh";
 
 export const links: Route.LinksFunction = () => [
@@ -49,11 +49,7 @@ export default function App() {
 }
 
 export const middleware: Route.MiddlewareFunction[] = [
-  async ({ request }, next) => {
-    return provideRequestContext(request, async () => {
-      return await next();
-    });
-  },
+  kenmonReactRouterMiddleware,
 ];
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

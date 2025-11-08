@@ -1,26 +1,25 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
+import type { Route } from '../+types/root'
 
-interface RequestContext {
+interface KenmonReactRouterContext {
   request: Request
   responseHeaders: Headers
 }
 
-const REQUEST_CONTEXT = new AsyncLocalStorage<RequestContext>()
+const KENMON_REACT_ROUTER_CONTEXT = new AsyncLocalStorage<KenmonReactRouterContext>()
 
 /**
- * Provides request context through AsyncLocalStorage for the duration of the callback.
- * Response headers set during execution will be automatically merged into the response.
+ * Middleware for Kenmon React Router adapter.
+ * Sets up AsyncLocalStorage context for request and response headers.
+ * Must be added to the middleware array in root.tsx to use Kenmon with React Router.
  */
-export async function provideRequestContext(
-  request: Request,
-  cb: () => Promise<Response>,
-): Promise<Response> {
+export const kenmonReactRouterMiddleware: Route.MiddlewareFunction = async ({ request }, next) => {
   const responseHeaders = new Headers()
 
-  const response = await REQUEST_CONTEXT.run(
+  const response = await KENMON_REACT_ROUTER_CONTEXT.run(
     { request, responseHeaders },
     async () => {
-      return await cb()
+      return await next()
     },
   )
 
@@ -33,14 +32,14 @@ export async function provideRequestContext(
 }
 
 /**
- * Gets the current request context from AsyncLocalStorage.
- * Must be called within a provideRequestContext() execution context.
+ * Gets the current Kenmon React Router context from AsyncLocalStorage.
+ * Must be called within kenmonReactRouterMiddleware execution context.
  */
-export function getRequestContext(): RequestContext {
-  const context = REQUEST_CONTEXT.getStore()
+export function getKenmonReactRouterContext(): KenmonReactRouterContext {
+  const context = KENMON_REACT_ROUTER_CONTEXT.getStore()
   if (!context) {
     throw new Error(
-      'Request context not found. Make sure middleware is properly configured.',
+      'Kenmon React Router context not found. Make sure kenmonReactRouterMiddleware is properly configured.',
     )
   }
   return context

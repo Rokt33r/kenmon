@@ -1,5 +1,5 @@
 import type { KenmonAdapter, CookieOptions } from 'kenmon'
-import { getRequestContext } from '../context'
+import { getKenmonReactRouterContext } from '../context'
 
 /**
  * React Router adapter for Kenmon authentication.
@@ -11,7 +11,7 @@ export class KenmonReactRouterAdapter implements KenmonAdapter {
     value: string,
     options?: CookieOptions,
   ): Promise<void> {
-    const { responseHeaders } = getRequestContext()
+    const { responseHeaders } = getKenmonReactRouterContext()
 
     const cookieParts = [`${name}=${value}`]
 
@@ -25,7 +25,7 @@ export class KenmonReactRouterAdapter implements KenmonAdapter {
   }
 
   async getCookie(name: string): Promise<string | undefined> {
-    const { request } = getRequestContext()
+    const { request } = getKenmonReactRouterContext()
 
     const cookieHeader = request.headers.get('Cookie')
     if (!cookieHeader) return undefined
@@ -37,7 +37,7 @@ export class KenmonReactRouterAdapter implements KenmonAdapter {
   }
 
   async deleteCookie(name: string): Promise<void> {
-    const { responseHeaders } = getRequestContext()
+    const { responseHeaders } = getKenmonReactRouterContext()
 
     responseHeaders.append('Set-Cookie', `${name}=; Max-Age=0; Path=/`)
   }
