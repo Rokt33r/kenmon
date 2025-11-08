@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { SignupOTPForm } from '@/components/signup-otp-form'
 
 export default async function SignUpPage({
   searchParams,
@@ -145,50 +146,13 @@ export default async function SignUpPage({
               </form>
             ) : (
               /* Step 2: OTP Verification */
-              <form action={verifyOTP} className='space-y-4'>
-                <input type='hidden' name='email' value={email} />
-                <input type='hidden' name='otpId' value={otpId} />
-
-                {signature && (
-                  <div className='rounded-lg border bg-muted p-4 text-center'>
-                    <p className='text-sm text-muted-foreground mb-1'>
-                      Signature
-                    </p>
-                    <p className='font-semibold text-lg'>{signature}</p>
-                    <p className='text-xs text-muted-foreground mt-1'>
-                      Verify this matches the signature in your email
-                    </p>
-                  </div>
-                )}
-
-                <div className='space-y-2'>
-                  <Label htmlFor='code'>Verification Code</Label>
-                  <Input
-                    type='text'
-                    id='code'
-                    name='code'
-                    placeholder='000000'
-                    maxLength={6}
-                    pattern='[0-9]{6}'
-                    className='text-center text-2xl tracking-widest'
-                    required
-                    autoComplete='one-time-code'
-                  />
-                </div>
-
-                {error && (
-                  <div className='text-sm text-destructive'>{error}</div>
-                )}
-
-                <div className='flex gap-2'>
-                  <Button asChild variant='outline' className='flex-1'>
-                    <Link href='/signup'>Back</Link>
-                  </Button>
-                  <Button type='submit' className='flex-1'>
-                    Verify & Sign Up
-                  </Button>
-                </div>
-              </form>
+              <SignupOTPForm
+                email={email}
+                otpId={otpId}
+                signature={signature}
+                error={error}
+                verifyOTP={verifyOTP}
+              />
             )}
           </CardContent>
         </Card>

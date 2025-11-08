@@ -12,6 +12,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from '@/components/ui/input-otp'
+import { useState } from 'react'
 
 export async function loader() {
   // Check if already authenticated
@@ -94,6 +101,7 @@ export default function SignUpPage() {
   const otpId = searchParams.get('otpId') || ''
   const signature = searchParams.get('signature') || ''
   const error = searchParams.get('error') || ''
+  const [otpValue, setOtpValue] = useState('')
 
   return (
     <div className='flex min-h-screen items-center justify-center bg-background'>
@@ -161,17 +169,26 @@ export default function SignUpPage() {
 
                 <div className='space-y-2'>
                   <Label htmlFor='code'>Verification Code</Label>
-                  <Input
-                    type='text'
-                    id='code'
-                    name='code'
-                    placeholder='000000'
-                    maxLength={6}
-                    pattern='[0-9]{6}'
-                    className='text-center text-2xl tracking-widest'
-                    required
-                    autoComplete='one-time-code'
-                  />
+                  <div className='flex justify-center'>
+                    <InputOTP
+                      maxLength={6}
+                      value={otpValue}
+                      onChange={setOtpValue}
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                      </InputOTPGroup>
+                      <InputOTPSeparator />
+                      <InputOTPGroup>
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </div>
+                  <input type='hidden' name='code' value={otpValue} />
                 </div>
 
                 {error && (
