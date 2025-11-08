@@ -111,3 +111,5 @@ export class KenmonReactRouterAdapter implements KenmonAdapter {
     responseHeaders.append('Set-Cookie', `${name}=; Max-Age=0; Path=/`)
   }
 }
+
+export { SessionRefresh } from './SessionRefresh'

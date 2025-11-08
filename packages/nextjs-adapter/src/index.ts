@@ -28,3 +28,5 @@ export class KenmonNextJSAdapter implements KenmonAdapter {
     cookieStore.delete(name)
   }
 }
+
+export { SessionRefresh } from './SessionRefresh'
