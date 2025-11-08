@@ -1,6 +1,6 @@
 import { KenmonAuthService } from 'kenmon'
 import { KenmonEmailOTPProvider } from '@kenmon/email-otp-provider'
-import { KenmonReactRouterAdapter } from './adapter'
+import { KenmonReactRouterAdapter } from '@kenmon/react-router-adapter'
 import { config } from '../config'
 import {
   DrizzleSessionStorage,

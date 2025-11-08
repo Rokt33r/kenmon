@@ -105,6 +105,9 @@ importers:
       '@kenmon/email-otp-provider':
         specifier: workspace:*
         version: link:../../packages/email-otp-provider
+      '@kenmon/react-router-adapter':
+        specifier: workspace:*
+        version: link:../../packages/react-router-adapter
       '@radix-ui/react-label':
         specifier: ^2.1.1
         version: 2.1.7(@types/react-dom@19.2.2(@types/react@19.2.2))(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -123,18 +126,12 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      date-fns:
-        specifier: ^4.1.0
-        version: 4.1.0
       drizzle-orm:
         specifier: ^0.44.7
         version: 0.44.7(gel@2.1.1)(postgres@3.4.7)
       isbot:
         specifier: ^5.1.31
         version: 5.1.32
-      jsonwebtoken:
-        specifier: ^9.0.2
-        version: 9.0.2
       kenmon:
         specifier: workspace:*
         version: link:../../packages/kenmon
@@ -163,9 +160,6 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.1.13
         version: 4.1.17(vite@7.2.1(@types/node@22.19.0)(jiti@2.6.1)(lightningcss@1.30.2))
-      '@types/jsonwebtoken':
-        specifier: ^9.0.7
-        version: 9.0.10
       '@types/node':
         specifier: ^22
         version: 22.19.0
@@ -258,6 +252,21 @@ importers:
       next:
         specifier: ^15.0.0
         version: 15.5.6(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
+  packages/react-router-adapter:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.24
+      kenmon:
+        specifier: workspace:*
+        version: link:../kenmon
+      react-router:
+        specifier: ^7.0.0
+        version: 7.9.5(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
