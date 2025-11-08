@@ -1,11 +1,11 @@
 import { Link, redirect, Form } from 'react-router'
 import type { Route } from './+types/home'
-import { auth } from '~/lib/auth/auth'
-import { db } from '~/lib/db'
+import { auth } from '@/lib/auth/auth'
+import { db } from '@/lib/db'
 import { userIdentifiers } from '@shared/db/schema'
 import { eq } from 'drizzle-orm'
-import { Button } from '~/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export function meta({}: Route.MetaArgs) {
   return [

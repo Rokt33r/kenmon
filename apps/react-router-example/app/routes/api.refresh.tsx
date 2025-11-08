@@ -1,5 +1,5 @@
 import type { Route } from './+types/api.refresh'
-import { auth } from '~/lib/auth/auth'
+import { auth } from '@/lib/auth/auth'
 
 export async function action() {
   const result = await auth.refreshSession()

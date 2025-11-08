@@ -1,17 +1,17 @@
 import { Link, redirect, useSearchParams, Form } from 'react-router'
 import type { Route } from './+types/signin'
-import { auth } from '~/lib/auth/auth'
-import { getRequestMetadata } from '~/lib/auth/utils'
-import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
-import { Label } from '~/components/ui/label'
+import { auth } from '@/lib/auth/auth'
+import { getRequestMetadata } from '@/lib/auth/utils'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '~/components/ui/card'
+} from '@/components/ui/card'
 
 export async function loader() {
   // Check if already authenticated
