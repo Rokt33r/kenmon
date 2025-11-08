@@ -169,7 +169,11 @@ export class DrizzleEmailOTPStorage implements KenmonEmailOTPStorage {
   }
 
   async getOTPById(id: string): Promise<KenmonEmailOTP | null> {
-    const [otp] = await this.db.select().from(otps).where(eq(otps.id, id)).limit(1)
+    const [otp] = await this.db
+      .select()
+      .from(otps)
+      .where(eq(otps.id, id))
+      .limit(1)
     return otp || null
   }
 

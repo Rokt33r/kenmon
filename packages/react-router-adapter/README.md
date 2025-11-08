@@ -149,6 +149,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 ### How it works
 
 The component:
+
 - Checks if the session needs refreshing:
   - Every 15 minutes
   - When the window regains focus
@@ -160,10 +161,12 @@ The component:
 ### Troubleshooting
 
 **Error: "Kenmon React Router context not found"**
+
 - Make sure `v8_middleware: true` is set in react-router.config.ts
 - Verify that `kenmonReactRouterMiddleware` is exported in app/root.tsx
 
 **404 errors when refreshing**
+
 - Check that the route path is registered in app/routes.ts
 - Ensure the `action` prop matches the path in routes.ts
 

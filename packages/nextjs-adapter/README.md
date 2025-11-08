@@ -90,6 +90,7 @@ export default function RootLayout({
 ### How it works
 
 The component:
+
 - Checks if the session needs refreshing:
   - Every 15 minutes
   - When the window regains focus

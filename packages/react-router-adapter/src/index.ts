@@ -6,7 +6,8 @@ interface KenmonReactRouterContext {
   responseHeaders: Headers
 }
 
-const KENMON_REACT_ROUTER_CONTEXT = new AsyncLocalStorage<KenmonReactRouterContext>()
+const KENMON_REACT_ROUTER_CONTEXT =
+  new AsyncLocalStorage<KenmonReactRouterContext>()
 
 /**
  * Gets the current Kenmon React Router context from AsyncLocalStorage.

@@ -92,9 +92,21 @@ export class KenmonEmailOTPProvider extends KenmonProvider {
   private otpTtl: number
   private otpLength: number
   private emailFrom: string
-  private emailSubject: (code: string, signature: string, otpTtl: number) => string
-  private emailTextContent: (code: string, signature: string, otpTtl: number) => string
-  private emailHtmlContent: (code: string, signature: string, otpTtl: number) => string
+  private emailSubject: (
+    code: string,
+    signature: string,
+    otpTtl: number,
+  ) => string
+  private emailTextContent: (
+    code: string,
+    signature: string,
+    otpTtl: number,
+  ) => string
+  private emailHtmlContent: (
+    code: string,
+    signature: string,
+    otpTtl: number,
+  ) => string
 
   constructor(config: KenmonEmailOTPProviderConfig) {
     super()
@@ -105,23 +117,29 @@ export class KenmonEmailOTPProvider extends KenmonProvider {
     this.emailFrom = config.emailFrom
 
     // Set default email subject
-    this.emailSubject = config.emailSubject ?? ((code: string, signature: string, otpTtl: number) => {
-      return `Verify your email - ${signature}`
-    })
+    this.emailSubject =
+      config.emailSubject ??
+      ((code: string, signature: string, otpTtl: number) => {
+        return `Verify your email - ${signature}`
+      })
 
     // Set default text content
-    this.emailTextContent = config.emailTextContent ?? ((code: string, signature: string, otpTtl: number) => {
-      return `Your verification code is: ${code}
+    this.emailTextContent =
+      config.emailTextContent ??
+      ((code: string, signature: string, otpTtl: number) => {
+        return `Your verification code is: ${code}
 
 Request Signature: ${signature}
 ⚠️ Verify this signature matches the one shown on the website before entering your code.
 
 This code will expire in ${Math.floor(otpTtl / 60)} minutes.`
-    })
+      })
 
     // Set default HTML content
-    this.emailHtmlContent = config.emailHtmlContent ?? ((code: string, signature: string, otpTtl: number) => {
-      return `
+    this.emailHtmlContent =
+      config.emailHtmlContent ??
+      ((code: string, signature: string, otpTtl: number) => {
+        return `
 <div>
   <p>Your verification code is:</p>
   <h2 style="font-size: 32px; letter-spacing: 8px; font-weight: bold;">${code}</h2>
@@ -130,7 +148,7 @@ This code will expire in ${Math.floor(otpTtl / 60)} minutes.`
   <p style="margin-top: 16px;">This code will expire in ${Math.floor(otpTtl / 60)} minutes.</p>
 </div>
       `.trim()
-    })
+      })
   }
 
   async prepare(
@@ -158,7 +176,12 @@ This code will expire in ${Math.floor(otpTtl / 60)} minutes.`
       const expiresAt = addSeconds(new Date(), this.otpTtl)
 
       // Store OTP
-      const otp = await this.otpStorage.createOTP(email, code, expiresAt, signature)
+      const otp = await this.otpStorage.createOTP(
+        email,
+        code,
+        expiresAt,
+        signature,
+      )
 
       // Generate email content
       const subject = this.emailSubject(code, signature, this.otpTtl)
@@ -174,7 +197,10 @@ This code will expire in ${Math.floor(otpTtl / 60)} minutes.`
         htmlContent,
       })
 
-      return { success: true, data: { otpId: otp.id, signature: otp.signature } }
+      return {
+        success: true,
+        data: { otpId: otp.id, signature: otp.signature },
+      }
     } catch (error) {
       return { success: false, error: error as Error }
     }

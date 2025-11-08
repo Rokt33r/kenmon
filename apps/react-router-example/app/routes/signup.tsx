@@ -42,7 +42,9 @@ export async function action({ request }: Route.ActionArgs) {
 
     if (!result.success) {
       console.error(result.error)
-      throw redirect(`/signup?error=${encodeURIComponent(result.error.message)}`)
+      throw redirect(
+        `/signup?error=${encodeURIComponent(result.error.message)}`,
+      )
     }
 
     throw redirect(
