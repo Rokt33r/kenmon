@@ -1,6 +1,6 @@
 {
   "name": "kenmon",
-  "version": "0.0.3",
+  "version": "1.0.0-pre.0",
   "description": "Portable authentication module - Core package",
   "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
   "license": "MIT",
