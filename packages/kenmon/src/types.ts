@@ -104,11 +104,20 @@ export interface KenmonAdapter {
   deleteCookie(name: string): Promise<void>
 }
 
+/**
+ * Process payload to sign in/up.
+ * It resolves an identifier which can be used for resolving a user but Provider doesn't do for the user. The user should be resolved in the service which is using this provider. It will resolve the user with its storage.
+ */
 export abstract class KenmonProvider {
   abstract readonly type: string
 
-  prepare?(payload: KenmonPreparePayload): Promise<KenmonReturnType<any>>
+  abstract prepare?(
+    payload: KenmonPreparePayload,
+  ): Promise<KenmonReturnType<any>>
 
+  /**
+   * Authenticate and resolve identifier. KenmonProvider only validate payload. It doesn't validate existence of identifier. Kenmon service will resolve user from the identifier with its storage.
+   */
   abstract authenticate(
     payload: KenmonAuthenticatePayload,
   ): Promise<KenmonReturnType<KenmonIdentifier>>
