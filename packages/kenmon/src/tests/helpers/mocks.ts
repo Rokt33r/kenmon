@@ -1,12 +1,8 @@
 import {
   KenmonStorage,
   KenmonAdapter,
-  KenmonProvider,
   KenmonSession,
   KenmonIdentifier,
-  KenmonAuthenticatePayload,
-  KenmonPreparePayload,
-  KenmonReturnType,
   CookieOptions,
 } from '../../types'
 
@@ -56,6 +52,7 @@ export class MockStorage implements KenmonStorage<MockUser> {
     userId: string,
     token: string,
     expiresAt: Date,
+    mfaVerified: boolean,
     ipAddress?: string,
     userAgent?: string,
   ): Promise<KenmonSession> {
@@ -72,6 +69,8 @@ export class MockStorage implements KenmonStorage<MockUser> {
       invalidated: false,
       ipAddress,
       userAgent,
+      mfaVerified,
+      mfaRequired: false,
     }
     this.sessions.set(sessionId, session)
     return session
@@ -83,7 +82,12 @@ export class MockStorage implements KenmonStorage<MockUser> {
 
   async updateSession(
     sessionId: string,
-    data: { expiresAt?: Date; refreshedAt?: Date; usedAt?: Date },
+    data: {
+      expiresAt?: Date
+      refreshedAt?: Date
+      usedAt?: Date
+      mfaVerified?: boolean
+    },
   ): Promise<void> {
     const session = this.sessions.get(sessionId)
     if (session) {
@@ -157,59 +161,5 @@ export class MockAdapter implements KenmonAdapter {
 
   getCookieOptions(name: string): CookieOptions | undefined {
     return this.cookieOptions.get(name)
-  }
-}
-
-// Mock Provider Implementation
-export class MockProvider extends KenmonProvider {
-  readonly type = 'mock'
-  private shouldFailAuth = false
-  prepare?: (
-    payload: KenmonPreparePayload,
-  ) => Promise<KenmonReturnType<KenmonPreparePayload>>
-
-  constructor(options?: {
-    prepareSupported?: boolean
-    shouldFailAuth?: boolean
-  }) {
-    super()
-
-    const prepareSupported = options?.prepareSupported ?? true
-
-    // Only define prepare method if supported
-    if (prepareSupported) {
-      this.prepare = async (
-        payload: KenmonPreparePayload,
-      ): Promise<KenmonReturnType<KenmonPreparePayload>> => {
-        return Promise.resolve({ success: true, data: payload })
-      }
-    }
-
-    if (options?.shouldFailAuth !== undefined) {
-      this.shouldFailAuth = options.shouldFailAuth
-    }
-  }
-
-  async authenticate(
-    payload: KenmonAuthenticatePayload,
-  ): Promise<KenmonReturnType<KenmonIdentifier>> {
-    if (this.shouldFailAuth) {
-      return {
-        success: false,
-        error: new Error('Authentication failed'),
-      }
-    }
-
-    // Simply return the identifier from the payload data
-    // The auth service will handle checking if user exists in storage
-    return {
-      success: true,
-      data: payload.data.identifier,
-    }
-  }
-
-  // Helper methods for testing
-  setShouldFailAuth(shouldFail: boolean) {
-    this.shouldFailAuth = shouldFail
   }
 }

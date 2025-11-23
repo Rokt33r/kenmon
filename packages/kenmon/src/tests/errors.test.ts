@@ -1,11 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
   KenmonError,
-  KenmonProviderNotFoundError,
   KenmonInvalidPayloadError,
   KenmonUserNotFoundError,
   KenmonUserAlreadyExistsError,
-  KenmonPrepareNotSupportedError,
   KenmonSessionNotFoundError,
   KenmonInvalidSessionError,
   KenmonSessionExpiredError,
@@ -19,18 +17,6 @@ describe('Error Classes', () => {
       expect(error.name).toBe('KenmonError')
       expect(error instanceof Error).toBe(true)
       expect(error instanceof KenmonError).toBe(true)
-    })
-  })
-
-  describe('KenmonProviderNotFoundError', () => {
-    it('should create error with formatted message', () => {
-      const error = new KenmonProviderNotFoundError('oauth')
-      expect(error.message).toBe(
-        'No authentication provider found for type: oauth',
-      )
-      expect(error.name).toBe('KenmonProviderNotFoundError')
-      expect(error instanceof KenmonError).toBe(true)
-      expect(error instanceof KenmonProviderNotFoundError).toBe(true)
     })
   })
 
@@ -63,18 +49,6 @@ describe('Error Classes', () => {
       expect(error.name).toBe('KenmonUserAlreadyExistsError')
       expect(error instanceof KenmonError).toBe(true)
       expect(error instanceof KenmonUserAlreadyExistsError).toBe(true)
-    })
-  })
-
-  describe('KenmonPrepareNotSupportedError', () => {
-    it('should create error with provider type in message', () => {
-      const error = new KenmonPrepareNotSupportedError('basic')
-      expect(error.message).toBe(
-        'Provider basic does not support prepare operation',
-      )
-      expect(error.name).toBe('KenmonPrepareNotSupportedError')
-      expect(error instanceof KenmonError).toBe(true)
-      expect(error instanceof KenmonPrepareNotSupportedError).toBe(true)
     })
   })
 

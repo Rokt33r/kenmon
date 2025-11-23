@@ -6,14 +6,6 @@ export class KenmonError extends Error {
   }
 }
 
-export class KenmonProviderNotFoundError extends KenmonError {
-  constructor(providerType: string) {
-    super(`No authentication provider found for type: ${providerType}`)
-    this.name = 'KenmonProviderNotFoundError'
-    Object.setPrototypeOf(this, KenmonProviderNotFoundError.prototype)
-  }
-}
-
 export class KenmonInvalidPayloadError extends KenmonError {
   constructor(message: string) {
     super(message)
@@ -35,14 +27,6 @@ export class KenmonUserAlreadyExistsError extends KenmonError {
     super(`User with ${identifier} already exists`)
     this.name = 'KenmonUserAlreadyExistsError'
     Object.setPrototypeOf(this, KenmonUserAlreadyExistsError.prototype)
-  }
-}
-
-export class KenmonPrepareNotSupportedError extends KenmonError {
-  constructor(providerType: string) {
-    super(`Provider ${providerType} does not support prepare operation`)
-    this.name = 'KenmonPrepareNotSupportedError'
-    Object.setPrototypeOf(this, KenmonPrepareNotSupportedError.prototype)
   }
 }
 

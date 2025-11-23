@@ -20,20 +20,19 @@ export interface KenmonSession {
   invalidatedAt?: Date
   ipAddress?: string
   userAgent?: string
+  mfaVerified: boolean
+  mfaRequired: boolean
 }
 
-export interface KenmonPreparePayload {
-  type: string
-  intent: 'sign-up' | 'sign-in'
-  data: any
-}
-
-export interface KenmonAuthenticatePayload {
-  type: string
-  intent: 'sign-up' | 'sign-in'
-  data: any
+export interface KenmonSignInOptions {
   ipAddress?: string
   userAgent?: string
+}
+
+export interface KenmonSignUpOptions {
+  ipAddress?: string
+  userAgent?: string
+  initialUserData?: any
 }
 
 export interface KenmonConfig<U> {
@@ -64,13 +63,19 @@ export interface KenmonStorage<U> {
     userId: string,
     token: string,
     expiresAt: Date,
+    mfaVerified: boolean,
     ipAddress?: string,
     userAgent?: string,
   ): Promise<KenmonSession>
   getSessionById(sessionId: string): Promise<KenmonSession | null>
   updateSession(
     sessionId: string,
-    data: { expiresAt?: Date; refreshedAt?: Date; usedAt?: Date },
+    data: {
+      expiresAt?: Date
+      refreshedAt?: Date
+      usedAt?: Date
+      mfaVerified?: boolean
+    },
   ): Promise<void>
   invalidateSession(sessionId: string): Promise<void>
   invalidateAllUserSessions(userId: string): Promise<void>
@@ -105,20 +110,10 @@ export interface KenmonAdapter {
 }
 
 /**
- * Process payload to sign in/up.
- * It resolves an identifier which can be used for resolving a user but Provider doesn't do for the user. The user should be resolved in the service which is using this provider. It will resolve the user with its storage.
+ * Authenticator interface.
+ * Responsible for resolving an identifier from user interaction.
  */
-export abstract class KenmonProvider {
+export abstract class KenmonAuthenticator {
   abstract readonly type: string
 
-  abstract prepare?(
-    payload: KenmonPreparePayload,
-  ): Promise<KenmonReturnType<any>>
-
-  /**
-   * Authenticate and resolve identifier. KenmonProvider only validate payload. It doesn't validate existence of identifier. Kenmon service will resolve user from the identifier with its storage.
-   */
-  abstract authenticate(
-    payload: KenmonAuthenticatePayload,
-  ): Promise<KenmonReturnType<KenmonIdentifier>>
 }

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { KenmonAuthService } from '../auth'
-import { MockStorage, MockAdapter, MockProvider } from './helpers/mocks'
+import { MockStorage, MockAdapter } from './helpers/mocks'
 import {
   KenmonSessionNotFoundError,
   KenmonInvalidSessionError,
@@ -18,7 +18,6 @@ describe('Session Management', () => {
   let storage: MockStorage
   let adapter: MockAdapter
   let authService: KenmonAuthService<any>
-  let provider: MockProvider
 
   beforeEach(() => {
     storage = new MockStorage()
@@ -28,18 +27,12 @@ describe('Session Management', () => {
       storage,
       adapter,
     })
-    provider = new MockProvider()
-    authService.registerProvider(provider)
   })
 
   async function signUpAndCreateSessionWithDefaultTestIdentifier() {
     await storage.createUser(defaultTestIdentifier, {})
 
-    const result = await authService.authenticate({
-      type: 'mock',
-      intent: 'sign-in',
-      data: { identifier: defaultTestIdentifier },
-    })
+    const result = await authService.signIn(defaultTestIdentifier)
 
     if (!result.success) {
       throw new Error('Failed to create session')
@@ -189,11 +182,7 @@ describe('Session Management', () => {
 
       // Clear cookie and create second session for same user
       await adapter.deleteCookie('session')
-      const result2 = await authService.authenticate({
-        type: 'mock',
-        intent: 'sign-in',
-        data: { identifier: defaultTestIdentifier },
-      })
+      const result2 = await authService.signIn(defaultTestIdentifier)
       if (!result2.success) throw new Error('Failed to create second session')
       const session2 = result2.data
 
@@ -226,15 +215,10 @@ describe('Session Management', () => {
         adapter,
         session: { ttl: customTTL },
       })
-      customAuthService.registerProvider(provider)
 
       await storage.createUser(defaultTestIdentifier, {})
 
-      const result = await customAuthService.authenticate({
-        type: 'mock',
-        intent: 'sign-in',
-        data: { identifier: defaultTestIdentifier },
-      })
+      const result = await customAuthService.signIn(defaultTestIdentifier)
 
       if (result.success) {
         const now = new Date()
@@ -253,15 +237,10 @@ describe('Session Management', () => {
         adapter,
         session: { cookieName: 'custom_session' },
       })
-      customAuthService.registerProvider(provider)
 
       await storage.createUser(defaultTestIdentifier, {})
 
-      await customAuthService.authenticate({
-        type: 'mock',
-        intent: 'sign-in',
-        data: { identifier: defaultTestIdentifier },
-      })
+      await customAuthService.signIn(defaultTestIdentifier)
 
       expect(adapter.hasCookie('custom_session')).toBe(true)
       expect(adapter.hasCookie('session')).toBe(false)

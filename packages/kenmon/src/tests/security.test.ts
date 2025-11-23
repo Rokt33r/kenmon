@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { KenmonAuthService } from '../auth'
-import { MockStorage, MockAdapter, MockProvider } from './helpers/mocks'
+import { MockStorage, MockAdapter } from './helpers/mocks'
 import { KenmonInvalidSessionError } from '../errors'
 import { KenmonIdentifier } from '../types'
 import jwt from 'jsonwebtoken'
@@ -14,7 +14,6 @@ describe('Security Tests', () => {
   let storage: MockStorage
   let adapter: MockAdapter
   let authService: KenmonAuthService<any>
-  let provider: MockProvider
 
   beforeEach(() => {
     storage = new MockStorage()
@@ -24,18 +23,12 @@ describe('Security Tests', () => {
       storage,
       adapter,
     })
-    provider = new MockProvider()
-    authService.registerProvider(provider)
   })
 
   async function signUpAndCreateSessionWithDefaultTestIdentifier() {
     await storage.createUser(defaultTestIdentifier, {})
 
-    const result = await authService.authenticate({
-      type: 'mock',
-      intent: 'sign-in',
-      data: { identifier: defaultTestIdentifier },
-    })
+    const result = await authService.signIn(defaultTestIdentifier)
 
     if (!result.success) {
       throw new Error('Failed to create session')
@@ -53,11 +46,7 @@ describe('Security Tests', () => {
       // Create multiple sessions
       for (let i = 0; i < 10; i++) {
         await adapter.deleteCookie('session')
-        const result = await authService.authenticate({
-          type: 'mock',
-          intent: 'sign-in',
-          data: { identifier: defaultTestIdentifier },
-        })
+        const result = await authService.signIn(defaultTestIdentifier)
 
         if (result.success) {
           tokens.add(result.data.token)
@@ -159,14 +148,9 @@ describe('Security Tests', () => {
         adapter,
         session: { secure: true },
       })
-      secureAuthService.registerProvider(provider)
 
       await storage.createUser(defaultTestIdentifier, {})
-      await secureAuthService.authenticate({
-        type: 'mock',
-        intent: 'sign-in',
-        data: { identifier: defaultTestIdentifier },
-      })
+      await secureAuthService.signIn(defaultTestIdentifier)
 
       const options = adapter.getCookieOptions('session')
       expect(options?.secure).toBe(true)
@@ -186,14 +170,9 @@ describe('Security Tests', () => {
         adapter,
         session: { sameSite: 'strict' },
       })
-      strictAuthService.registerProvider(provider)
 
       await storage.createUser(defaultTestIdentifier, {})
-      await strictAuthService.authenticate({
-        type: 'mock',
-        intent: 'sign-in',
-        data: { identifier: defaultTestIdentifier },
-      })
+      await strictAuthService.signIn(defaultTestIdentifier)
 
       const options = adapter.getCookieOptions('session')
       expect(options?.sameSite).toBe('strict')

@@ -4,17 +4,15 @@ import jwt from 'jsonwebtoken'
 import {
   KenmonConfig,
   KenmonAdapter,
-  KenmonPreparePayload,
-  KenmonAuthenticatePayload,
   KenmonReturnType,
   KenmonSession,
   KenmonStorage,
-  KenmonProvider,
+  KenmonIdentifier,
+  KenmonSignInOptions,
+  KenmonSignUpOptions,
 } from './types'
 
 import {
-  KenmonProviderNotFoundError,
-  KenmonPrepareNotSupportedError,
   KenmonUserNotFoundError,
   KenmonUserAlreadyExistsError,
   KenmonSessionNotFoundError,
@@ -35,7 +33,6 @@ export class KenmonAuthService<U> {
 
   storage: KenmonStorage<U>
   adapter: KenmonAdapter
-  providers: Map<string, KenmonProvider>
 
   constructor(config: KenmonConfig<U>) {
     this.secret = config.secret
@@ -48,94 +45,65 @@ export class KenmonAuthService<U> {
 
     this.storage = config.storage
     this.adapter = config.adapter
-    this.providers = new Map()
   }
 
-  registerProvider(provider: KenmonProvider): void {
-    this.providers.set(provider.type, provider)
-  }
-
-  async prepare(payload: KenmonPreparePayload): Promise<KenmonReturnType<any>> {
-    const provider = this.providers.get(payload.type)
-    if (!provider) {
-      return {
-        success: false,
-        error: new KenmonProviderNotFoundError(payload.type),
-      }
-    }
-
-    if (!provider.prepare) {
-      return {
-        success: false,
-        error: new KenmonPrepareNotSupportedError(payload.type),
-      }
-    }
-
-    return provider.prepare(payload)
-  }
-
-  async authenticate(
-    payload: KenmonAuthenticatePayload,
+  async signIn(
+    identifier: KenmonIdentifier,
+    options?: KenmonSignInOptions,
   ): Promise<KenmonReturnType<KenmonSession>> {
-    const provider = this.providers.get(payload.type)
-    if (!provider) {
+    // Look up existing user
+    const user = await this.storage.getUserByIdentifier(identifier)
+    if (!user) {
+      return { success: false, error: new KenmonUserNotFoundError() }
+    }
+
+    // TODO: Check if user requires MFA
+    const mfaRequired = false // Placeholder for future MFA logic
+
+    // Create session
+    const userId = (user as any).id
+    const session = await this.createSession(
+      userId,
+      false, // mfaVerified is false by default as per user instruction
+      options?.ipAddress,
+      options?.userAgent,
+    )
+    return { success: true, data: session }
+  }
+
+  async signUp(
+    identifier: KenmonIdentifier,
+    data: any,
+    options?: KenmonSignUpOptions,
+  ): Promise<KenmonReturnType<KenmonSession>> {
+    // Check if user already exists
+    const existingUser = await this.storage.getUserByIdentifier(identifier)
+    if (existingUser) {
       return {
         success: false,
-        error: new KenmonProviderNotFoundError(payload.type),
+        error: new KenmonUserAlreadyExistsError(identifier.value),
       }
     }
 
-    // Provider validates credentials and returns identifier
-    const result = await provider.authenticate(payload)
+    // Create new user
+    const user = await this.storage.createUser(identifier, {
+      ...data,
+      ...options?.initialUserData,
+    })
 
-    if (!result.success) {
-      return { success: false, error: result.error }
-    }
-
-    const identifier = result.data
-
-    // Handle based on intent
-    if (payload.intent === 'sign-in') {
-      // Look up existing user
-      const user = await this.storage.getUserByIdentifier(identifier)
-      if (!user) {
-        return { success: false, error: new KenmonUserNotFoundError() }
-      }
-
-      // Create session
-      const userId = (user as any).id
-      const session = await this.createSession(
-        userId,
-        payload.ipAddress,
-        payload.userAgent,
-      )
-      return { success: true, data: session }
-    } else {
-      // sign-up
-      // Check if user already exists
-      const existingUser = await this.storage.getUserByIdentifier(identifier)
-      if (existingUser) {
-        return {
-          success: false,
-          error: new KenmonUserAlreadyExistsError(identifier.value),
-        }
-      }
-
-      // Create new user
-      const user = await this.storage.createUser(identifier, payload.data)
-
-      // Create session
-      const session = await this.createSession(
-        (user as any).id,
-        payload.ipAddress,
-        payload.userAgent,
-      )
-      return { success: true, data: session }
-    }
+    // Create session
+    const session = await this.createSession(
+      (user as any).id,
+      false, // mfaVerified is false by default
+      options?.ipAddress,
+      options?.userAgent,
+    )
+    return { success: true, data: session }
   }
 
   async createSession(
     userId: string,
+    mfaVerified: boolean,
     ipAddress?: string,
     userAgent?: string,
   ): Promise<KenmonSession> {
@@ -146,6 +114,7 @@ export class KenmonAuthService<U> {
       userId,
       token,
       expiresAt,
+      mfaVerified,
       ipAddress,
       userAgent,
     )
