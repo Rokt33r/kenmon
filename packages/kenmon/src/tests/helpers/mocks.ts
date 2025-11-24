@@ -48,14 +48,31 @@ export class MockStorage implements KenmonStorage<MockUser> {
     return this.getUserById(userId)
   }
 
-  async createSession(
-    userId: string,
-    token: string,
-    expiresAt: Date,
-    mfaVerified: boolean,
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<KenmonSession> {
+  async getUserAuthInfoByIdentifier(
+    identifier: KenmonIdentifier,
+  ): Promise<{ userId: string; mfaRequired: boolean } | null> {
+    const userId = this.identifiers.get(this.getIdentifierKey(identifier))
+    if (!userId) return null
+    return { userId, mfaRequired: false }
+  }
+
+  async createSession({
+    userId,
+    token,
+    expiresAt,
+    mfaVerified,
+    mfaRequired,
+    ipAddress,
+    userAgent,
+  }: {
+    userId: string
+    token: string
+    expiresAt: Date
+    mfaVerified: boolean
+    mfaRequired: boolean
+    ipAddress?: string
+    userAgent?: string
+  }): Promise<KenmonSession> {
     const sessionId = `session-${Date.now()}-${Math.random()}`
     const now = new Date()
     const session: KenmonSession = {
@@ -70,7 +87,7 @@ export class MockStorage implements KenmonStorage<MockUser> {
       ipAddress,
       userAgent,
       mfaVerified,
-      mfaRequired: false,
+      mfaRequired,
     }
     this.sessions.set(sessionId, session)
     return session

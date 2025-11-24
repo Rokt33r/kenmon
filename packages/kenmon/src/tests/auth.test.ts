@@ -50,13 +50,7 @@ describe('Authentication Flows', () => {
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data.userId).toBeDefined()
-        expect(result.data.token).toBeDefined()
-        expect(result.data.expiresAt).toBeInstanceOf(Date)
-        expect(result.data.ipAddress).toBe('127.0.0.1')
-        expect(result.data.userAgent).toBe('test-agent')
-        expect(result.data.invalidated).toBe(false)
-        // MFA is not required by default in this mock setup, so verified should be false
-        expect(result.data.mfaVerified).toBe(false)
+        expect(result.data.mfaRequired).toBe(false)
         expect(adapter.hasCookie('session')).toBe(true)
       }
     })
@@ -76,9 +70,6 @@ describe('Authentication Flows', () => {
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data.userId).toBeDefined()
-        expect(result.data.token).toBeDefined()
-        expect(result.data.expiresAt).toBeInstanceOf(Date)
-        expect(result.data.mfaVerified).toBe(false) // Default for new signup is false based on plan/code
 
         // Verify user was created
         const user = await storage.getUserByIdentifier(defaultTestIdentifier)

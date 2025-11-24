@@ -56,17 +56,19 @@ export interface KenmonStorage<U> {
   // User operations
   createUser(identifier: KenmonIdentifier, data: any): Promise<U>
   getUserById(id: string): Promise<U | null>
-  getUserByIdentifier(identifier: KenmonIdentifier): Promise<U | null>
-
+  getUserAuthInfoByIdentifier(
+    identifier: KenmonIdentifier,
+  ): Promise<{ userId: string; mfaRequired: boolean } | null>
   // Session operations
-  createSession(
-    userId: string,
-    token: string,
-    expiresAt: Date,
-    mfaVerified: boolean,
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<KenmonSession>
+  createSession(data: {
+    userId: string
+    token: string
+    expiresAt: Date
+    mfaRequired: boolean
+    mfaVerified: boolean
+    ipAddress?: string
+    userAgent?: string
+  }): Promise<KenmonSession>
   getSessionById(sessionId: string): Promise<KenmonSession | null>
   updateSession(
     sessionId: string,
@@ -107,13 +109,4 @@ export interface KenmonAdapter {
   setCookie(name: string, value: string, options?: CookieOptions): Promise<void>
   getCookie(name: string): Promise<string | undefined>
   deleteCookie(name: string): Promise<void>
-}
-
-/**
- * Authenticator interface.
- * Responsible for resolving an identifier from user interaction.
- */
-export abstract class KenmonAuthenticator {
-  abstract readonly type: string
-
 }

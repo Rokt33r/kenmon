@@ -9,6 +9,7 @@ const defaultTestIdentifier: KenmonIdentifier = {
   type: 'email',
   value: 'test@example.com',
 }
+const testSecret = 'test-secret'
 
 describe('Security Tests', () => {
   let storage: MockStorage
@@ -19,7 +20,7 @@ describe('Security Tests', () => {
     storage = new MockStorage()
     adapter = new MockAdapter()
     authService = new KenmonAuthService({
-      secret: 'test-secret',
+      secret: testSecret,
       storage,
       adapter,
     })
@@ -34,7 +35,22 @@ describe('Security Tests', () => {
       throw new Error('Failed to create session')
     }
 
-    return result.data
+    const cookie = await adapter.getCookie('session')
+    if (!cookie) {
+      throw new Error('Session cookie not found')
+    }
+
+    const decoded = jwt.verify(cookie, testSecret) as {
+      sessionId: string
+      token: string
+    }
+
+    const session = await storage.getSession(decoded.sessionId)
+    if (!session) {
+      throw new Error('Session not found in storage')
+    }
+
+    return session
   }
 
   describe('Token Generation', () => {
@@ -49,7 +65,11 @@ describe('Security Tests', () => {
         const result = await authService.signIn(defaultTestIdentifier)
 
         if (result.success) {
-          tokens.add(result.data.token)
+          const cookie = await adapter.getCookie('session')
+          if (cookie) {
+            const decoded = jwt.verify(cookie, testSecret) as { token: string }
+            tokens.add(decoded.token)
+          }
         }
       }
 
@@ -107,7 +127,7 @@ describe('Security Tests', () => {
         token: '0'.repeat(64), // Different token
       }
 
-      const tamperedToken = jwt.sign(tamperedPayload, 'test-secret', {
+      const tamperedToken = jwt.sign(tamperedPayload, testSecret, {
         algorithm: 'HS256',
       })
 
@@ -143,7 +163,7 @@ describe('Security Tests', () => {
 
     it('should set secure flag based on configuration', async () => {
       const secureAuthService = new KenmonAuthService({
-        secret: 'test-secret',
+        secret: testSecret,
         storage,
         adapter,
         session: { secure: true },
@@ -165,7 +185,7 @@ describe('Security Tests', () => {
 
     it('should allow custom sameSite configuration', async () => {
       const strictAuthService = new KenmonAuthService({
-        secret: 'test-secret',
+        secret: testSecret,
         storage,
         adapter,
         session: { sameSite: 'strict' },

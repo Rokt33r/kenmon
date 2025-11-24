@@ -50,34 +50,37 @@ export class KenmonAuthService<U> {
   async signIn(
     identifier: KenmonIdentifier,
     options?: KenmonSignInOptions,
-  ): Promise<KenmonReturnType<KenmonSession>> {
+  ): Promise<KenmonReturnType<{ userId: string; mfaRequired: boolean }>> {
     // Look up existing user
-    const user = await this.storage.getUserByIdentifier(identifier)
-    if (!user) {
+    const authInfo = await this.storage.getUserAuthInfoByIdentifier(identifier)
+
+    if (!authInfo) {
       return { success: false, error: new KenmonUserNotFoundError() }
     }
 
-    // TODO: Check if user requires MFA
-    const mfaRequired = false // Placeholder for future MFA logic
+    const { userId, mfaRequired } = authInfo
 
     // Create session
-    const userId = (user as any).id
-    const session = await this.createSession(
+    const session = await this.createSession({
       userId,
-      false, // mfaVerified is false by default as per user instruction
-      options?.ipAddress,
-      options?.userAgent,
-    )
-    return { success: true, data: session }
+      mfaRequired,
+      ipAddress: options?.ipAddress,
+      userAgent: options?.userAgent,
+    })
+    return {
+      success: true,
+      data: { userId: session.userId, mfaRequired: session.mfaRequired },
+    }
   }
 
   async signUp(
     identifier: KenmonIdentifier,
     data: any,
     options?: KenmonSignUpOptions,
-  ): Promise<KenmonReturnType<KenmonSession>> {
+  ): Promise<KenmonReturnType<{ userId: string }>> {
     // Check if user already exists
-    const existingUser = await this.storage.getUserByIdentifier(identifier)
+    const existingUser =
+      await this.storage.getUserAuthInfoByIdentifier(identifier)
     if (existingUser) {
       return {
         success: false,
@@ -92,32 +95,38 @@ export class KenmonAuthService<U> {
     })
 
     // Create session
-    const session = await this.createSession(
-      (user as any).id,
-      false, // mfaVerified is false by default
-      options?.ipAddress,
-      options?.userAgent,
-    )
-    return { success: true, data: session }
+    const session = await this.createSession({
+      userId: (user as any).id,
+      mfaRequired: false,
+      ipAddress: options?.ipAddress,
+      userAgent: options?.userAgent,
+    })
+    return { success: true, data: { userId: session.userId } }
   }
 
-  async createSession(
-    userId: string,
-    mfaVerified: boolean,
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<KenmonSession> {
+  async createSession({
+    userId,
+    mfaRequired,
+    ipAddress,
+    userAgent,
+  }: {
+    userId: string
+    mfaRequired: boolean
+    ipAddress?: string
+    userAgent?: string
+  }): Promise<KenmonSession> {
     const token = this.generateSessionToken()
     const expiresAt = addSeconds(new Date(), this.session.ttl)
 
-    const session = await this.storage.createSession(
+    const session = await this.storage.createSession({
       userId,
       token,
       expiresAt,
-      mfaVerified,
+      mfaVerified: false,
+      mfaRequired,
       ipAddress,
       userAgent,
-    )
+    })
 
     await this.setSessionCookie(session.id, session.token)
 

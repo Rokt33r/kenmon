@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
+import jwt from 'jsonwebtoken'
 import { KenmonAuthService } from '../auth'
 import { MockStorage, MockAdapter } from './helpers/mocks'
 import {
@@ -14,6 +15,9 @@ const defaultTestIdentifier: KenmonIdentifier = {
   value: 'test@example.com',
 }
 
+const testSecret = 'test-secret'
+
+
 describe('Session Management', () => {
   let storage: MockStorage
   let adapter: MockAdapter
@@ -23,7 +27,7 @@ describe('Session Management', () => {
     storage = new MockStorage()
     adapter = new MockAdapter()
     authService = new KenmonAuthService({
-      secret: 'test-secret',
+      secret: testSecret,
       storage,
       adapter,
     })
@@ -38,7 +42,22 @@ describe('Session Management', () => {
       throw new Error('Failed to create session')
     }
 
-    return result.data
+    const cookie = await adapter.getCookie('session')
+    if (!cookie) {
+      throw new Error('Session cookie not found')
+    }
+
+    const decoded = jwt.verify(cookie, testSecret) as {
+      sessionId: string
+      token: string
+    }
+
+    const session = await storage.getSession(decoded.sessionId)
+    if (!session) {
+      throw new Error('Session not found in storage')
+    }
+
+    return session
   }
 
   describe('verifySession()', () => {
@@ -184,7 +203,10 @@ describe('Session Management', () => {
       await adapter.deleteCookie('session')
       const result2 = await authService.signIn(defaultTestIdentifier)
       if (!result2.success) throw new Error('Failed to create second session')
-      const session2 = result2.data
+      
+      const verifyResult2 = await authService.verifySession()
+      if (!verifyResult2.success) throw new Error('Failed to verify second session')
+      const session2 = verifyResult2.data
 
       // Sign out with allSessions option
       await authService.signOut({ allSessions: true })
@@ -221,10 +243,13 @@ describe('Session Management', () => {
       const result = await customAuthService.signIn(defaultTestIdentifier)
 
       if (result.success) {
+        const verifyResult = await customAuthService.verifySession()
+        if (!verifyResult.success) throw new Error('Failed to verify session')
+
         const now = new Date()
         const expectedExpiry = addSeconds(now, customTTL)
         const timeDiff = Math.abs(
-          result.data.expiresAt.getTime() - expectedExpiry.getTime(),
+          verifyResult.data.expiresAt.getTime() - expectedExpiry.getTime(),
         )
         expect(timeDiff).toBeLessThan(1000) // Within 1 second
       }
@@ -232,7 +257,7 @@ describe('Session Management', () => {
 
     it('should use custom cookie name', async () => {
       const customAuthService = new KenmonAuthService({
-        secret: 'test-secret',
+        secret: testSecret,
         storage,
         adapter,
         session: { cookieName: 'custom_session' },
