@@ -137,12 +137,16 @@ describe('verifySession()', () => {
       expect(result.success).toBe(true)
       if (result.success) {
         expect(result.data.id).toBeDefined()
-        expect(result.data.token).toBeDefined()
-        expect(result.data.invalidated).toBe(false)
+        expect(result.data.userId).toBeDefined()
+        expect(result.data.expiresAt).toBeInstanceOf(Date)
+        expect(result.data.refreshedAt).toBeInstanceOf(Date)
+        expect(result.data.createdAt).toBeInstanceOf(Date)
+        expect(result.data.mfaVerified).toBe(false)
+        expect(result.data.mfaEnabled).toBe(false)
       }
     })
 
-    it('should return complete session object', async () => {
+    it('should return safe session info only', async () => {
       const user = await storage.createUser(defaultTestIdentifier, {})
       await authService.signIn(defaultTestIdentifier)
 
@@ -150,11 +154,20 @@ describe('verifySession()', () => {
 
       expect(result.success).toBe(true)
       if (result.success) {
+        // Safe fields
         expect(result.data.userId).toBe(user.id)
         expect(result.data.expiresAt).toBeInstanceOf(Date)
         expect(result.data.createdAt).toBeInstanceOf(Date)
         expect(result.data.refreshedAt).toBeInstanceOf(Date)
-        expect(result.data.usedAt).toBeInstanceOf(Date)
+        expect(result.data.mfaVerified).toBeDefined()
+        expect(result.data.mfaEnabled).toBeDefined()
+
+        // Sensitive fields should not be exposed
+        expect((result.data as any).token).toBeUndefined()
+        expect((result.data as any).usedAt).toBeUndefined()
+        expect((result.data as any).invalidated).toBeUndefined()
+        expect((result.data as any).ipAddress).toBeUndefined()
+        expect((result.data as any).userAgent).toBeUndefined()
       }
     })
   })
@@ -165,14 +178,16 @@ describe('verifySession()', () => {
 
       const result1 = await authService.verifySession()
       if (!result1.success) throw new Error('Setup failed')
-      const originalUsedAt = result1.data.usedAt
+
+      const storedSession1 = await storage.getSessionById(result1.data.id)
+      const originalUsedAt = storedSession1!.usedAt
 
       await new Promise((resolve) => setTimeout(resolve, 10))
 
       await authService.verifySession()
 
-      const storedSession = await storage.getSessionById(result1.data.id)
-      expect(storedSession?.usedAt.getTime()).toBeGreaterThan(
+      const storedSession2 = await storage.getSessionById(result1.data.id)
+      expect(storedSession2?.usedAt.getTime()).toBeGreaterThan(
         originalUsedAt.getTime(),
       )
     })

@@ -133,7 +133,17 @@ export class KenmonAuthService<U> {
     return session
   }
 
-  async verifySession(): Promise<KenmonReturnType<KenmonSession>> {
+  async verifySession(): Promise<
+    KenmonReturnType<{
+      id: string
+      userId: string
+      expiresAt: Date
+      refreshedAt: Date
+      createdAt: Date
+      mfaVerified: boolean
+      mfaEnabled: boolean
+    }>
+  > {
     const cookieValue = await this.adapter.getCookie(
       this.session.cookieName || defaultSessionCookieName,
     )
@@ -162,7 +172,18 @@ export class KenmonAuthService<U> {
         usedAt: new Date(),
       })
 
-      return { success: true, data: session }
+      return {
+        success: true,
+        data: {
+          id: session.id,
+          userId: session.userId,
+          expiresAt: session.expiresAt,
+          refreshedAt: session.refreshedAt,
+          createdAt: session.createdAt,
+          mfaVerified: session.mfaVerified,
+          mfaEnabled: session.mfaEnabled,
+        },
+      }
     } catch {
       return { success: false, error: new KenmonInvalidSessionError() }
     }
@@ -174,16 +195,22 @@ export class KenmonAuthService<U> {
       return { success: false, error: verifyResult.error }
     }
 
-    const session = verifyResult.data
+    const safeSessionData = verifyResult.data
     const now = new Date()
     const newExpiresAt = addSeconds(now, this.session.ttl)
 
-    await this.storage.updateSession(session.id, {
+    await this.storage.updateSession(safeSessionData.id, {
       expiresAt: newExpiresAt,
       refreshedAt: now,
     })
 
-    await this.setSessionCookie(session.id, session.token)
+    // Fetch full session to get token for cookie
+    const fullSession = await this.storage.getSessionById(safeSessionData.id)
+    if (!fullSession) {
+      return { success: false, error: new KenmonSessionNotFoundError() }
+    }
+
+    await this.setSessionCookie(fullSession.id, fullSession.token)
 
     return { success: true, data: undefined }
   }
