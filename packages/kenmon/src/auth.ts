@@ -50,7 +50,7 @@ export class KenmonAuthService<U> {
   async signIn(
     identifier: KenmonIdentifier,
     options?: KenmonSignInOptions,
-  ): Promise<KenmonReturnType<{ userId: string; mfaRequired: boolean }>> {
+  ): Promise<KenmonReturnType<{ userId: string; mfaEnabled: boolean }>> {
     // Look up existing user
     const authInfo = await this.storage.getUserAuthInfoByIdentifier(identifier)
 
@@ -58,18 +58,18 @@ export class KenmonAuthService<U> {
       return { success: false, error: new KenmonUserNotFoundError() }
     }
 
-    const { userId, mfaRequired } = authInfo
+    const { userId, mfaEnabled } = authInfo
 
     // Create session
     const session = await this.createSession({
       userId,
-      mfaRequired,
+      mfaEnabled,
       ipAddress: options?.ipAddress,
       userAgent: options?.userAgent,
     })
     return {
       success: true,
-      data: { userId: session.userId, mfaRequired: session.mfaRequired },
+      data: { userId: session.userId, mfaEnabled: session.mfaEnabled },
     }
   }
 
@@ -97,21 +97,21 @@ export class KenmonAuthService<U> {
     // Create session
     const session = await this.createSession({
       userId: (user as any).id,
-      mfaRequired: false,
+      mfaEnabled: false,
       ipAddress: options?.ipAddress,
       userAgent: options?.userAgent,
     })
     return { success: true, data: { userId: session.userId } }
   }
 
-  async createSession({
+  private async createSession({
     userId,
-    mfaRequired,
+    mfaEnabled,
     ipAddress,
     userAgent,
   }: {
     userId: string
-    mfaRequired: boolean
+    mfaEnabled: boolean
     ipAddress?: string
     userAgent?: string
   }): Promise<KenmonSession> {
@@ -123,7 +123,7 @@ export class KenmonAuthService<U> {
       token,
       expiresAt,
       mfaVerified: false,
-      mfaRequired,
+      mfaEnabled,
       ipAddress,
       userAgent,
     })
@@ -200,6 +200,14 @@ export class KenmonAuthService<U> {
     await this.adapter.deleteCookie(
       this.session.cookieName || defaultSessionCookieName,
     )
+  }
+
+  async enableMfa(userId: string): Promise<void> {
+    await this.storage.enableMfa(userId)
+  }
+
+  async disableMfa(userId: string): Promise<void> {
+    await this.storage.disableMfa(userId)
   }
 
   private async setSessionCookie(

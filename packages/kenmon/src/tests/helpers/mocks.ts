@@ -10,6 +10,7 @@ import {
 export interface MockUser {
   id: string
   email?: string
+  mfaEnabled: boolean
   createdAt: Date
 }
 
@@ -28,6 +29,7 @@ export class MockStorage implements KenmonStorage<MockUser> {
     const user: MockUser = {
       id: userId,
       email: identifier.type === 'email' ? identifier.value : undefined,
+      mfaEnabled: false,
       createdAt: new Date(),
       ...data,
     }
@@ -50,10 +52,26 @@ export class MockStorage implements KenmonStorage<MockUser> {
 
   async getUserAuthInfoByIdentifier(
     identifier: KenmonIdentifier,
-  ): Promise<{ userId: string; mfaRequired: boolean } | null> {
+  ): Promise<{ userId: string; mfaEnabled: boolean } | null> {
     const userId = this.identifiers.get(this.getIdentifierKey(identifier))
     if (!userId) return null
-    return { userId, mfaRequired: false }
+    const user = this.users.get(userId)
+    if (!user) return null
+    return { userId, mfaEnabled: user.mfaEnabled }
+  }
+
+  async enableMfa(userId: string): Promise<void> {
+    const user = this.users.get(userId)
+    if (user) {
+      user.mfaEnabled = true
+    }
+  }
+
+  async disableMfa(userId: string): Promise<void> {
+    const user = this.users.get(userId)
+    if (user) {
+      user.mfaEnabled = false
+    }
   }
 
   async createSession({
@@ -61,7 +79,7 @@ export class MockStorage implements KenmonStorage<MockUser> {
     token,
     expiresAt,
     mfaVerified,
-    mfaRequired,
+    mfaEnabled,
     ipAddress,
     userAgent,
   }: {
@@ -69,7 +87,7 @@ export class MockStorage implements KenmonStorage<MockUser> {
     token: string
     expiresAt: Date
     mfaVerified: boolean
-    mfaRequired: boolean
+    mfaEnabled: boolean
     ipAddress?: string
     userAgent?: string
   }): Promise<KenmonSession> {
@@ -87,7 +105,7 @@ export class MockStorage implements KenmonStorage<MockUser> {
       ipAddress,
       userAgent,
       mfaVerified,
-      mfaRequired,
+      mfaEnabled,
     }
     this.sessions.set(sessionId, session)
     return session
@@ -108,7 +126,8 @@ export class MockStorage implements KenmonStorage<MockUser> {
   ): Promise<void> {
     const session = this.sessions.get(sessionId)
     if (session) {
-      Object.assign(session, data)
+      const updatedSession = { ...session, ...data }
+      this.sessions.set(sessionId, updatedSession)
     }
   }
 
@@ -136,8 +155,11 @@ export class MockStorage implements KenmonStorage<MockUser> {
     this.identifiers.clear()
   }
 
-  getSession(sessionId: string): KenmonSession | undefined {
-    return this.sessions.get(sessionId)
+  updateUser(userId: string, data: Partial<MockUser>): void {
+    const user = this.users.get(userId)
+    if (user) {
+      Object.assign(user, data)
+    }
   }
 }
 

@@ -21,7 +21,7 @@ export interface KenmonSession {
   ipAddress?: string
   userAgent?: string
   mfaVerified: boolean
-  mfaRequired: boolean
+  mfaEnabled: boolean
 }
 
 export interface KenmonSignInOptions {
@@ -58,13 +58,15 @@ export interface KenmonStorage<U> {
   getUserById(id: string): Promise<U | null>
   getUserAuthInfoByIdentifier(
     identifier: KenmonIdentifier,
-  ): Promise<{ userId: string; mfaRequired: boolean } | null>
+  ): Promise<{ userId: string; mfaEnabled: boolean } | null>
+  enableMfa(userId: string): Promise<void>
+  disableMfa(userId: string): Promise<void>
   // Session operations
   createSession(data: {
     userId: string
     token: string
     expiresAt: Date
-    mfaRequired: boolean
+    mfaEnabled: boolean
     mfaVerified: boolean
     ipAddress?: string
     userAgent?: string
