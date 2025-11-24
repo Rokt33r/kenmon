@@ -2,9 +2,6 @@ import crypto from 'crypto'
 import { isAfter, addSeconds } from 'date-fns'
 import { z } from 'zod'
 import {
-  KenmonProvider,
-  KenmonPreparePayload,
-  KenmonAuthenticatePayload,
   KenmonIdentifier,
   KenmonReturnType,
   KenmonMailer,
@@ -84,7 +81,7 @@ export interface KenmonEmailOTPProviderConfig {
   emailHtmlContent?: (code: string, signature: string, otpTtl: number) => string
 }
 
-export class KenmonEmailOTPProvider extends KenmonProvider {
+export class KenmonEmailOTPAuthenticator {
   readonly type = 'email-otp'
 
   private mailer: KenmonMailer
@@ -109,7 +106,6 @@ export class KenmonEmailOTPProvider extends KenmonProvider {
   ) => string
 
   constructor(config: KenmonEmailOTPProviderConfig) {
-    super()
     this.mailer = config.mailer
     this.otpStorage = config.otpStorage
     this.otpTtl = config.otpTtl ?? 300 // 5 minutes default
@@ -151,19 +147,17 @@ This code will expire in ${Math.floor(otpTtl / 60)} minutes.`
       })
   }
 
-  async prepare(
-    payload: KenmonPreparePayload,
+  async sendOTP(
+    email: string,
   ): Promise<KenmonReturnType<{ otpId: string; signature: string }>> {
-    // Validate payload with Zod
-    const result = emailOTPPrepareDataSchema.safeParse(payload.data)
+    // Validate email
+    const result = emailOTPPrepareDataSchema.safeParse({ email })
     if (!result.success) {
       return {
         success: false,
         error: new KenmonInvalidPayloadError(result.error.issues[0].message),
       }
     }
-
-    const { email } = result.data
 
     try {
       // Generate OTP code
@@ -206,11 +200,13 @@ This code will expire in ${Math.floor(otpTtl / 60)} minutes.`
     }
   }
 
-  async authenticate(
-    payload: KenmonAuthenticatePayload,
-  ): Promise<KenmonReturnType<KenmonIdentifier>> {
+  async verifyOTP(payload: {
+    email: string
+    otpId: string
+    code: string
+  }): Promise<KenmonReturnType<KenmonIdentifier>> {
     // Validate payload with Zod
-    const result = emailOTPAuthenticateDataSchema.safeParse(payload.data)
+    const result = emailOTPAuthenticateDataSchema.safeParse(payload)
     if (!result.success) {
       return {
         success: false,
