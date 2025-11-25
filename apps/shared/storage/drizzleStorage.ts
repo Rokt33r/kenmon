@@ -58,22 +58,62 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
     return result?.user || null
   }
 
+  async getUserAuthInfoByIdentifier(
+    identifier: KenmonIdentifier,
+  ): Promise<{ userId: string; mfaEnabled: boolean } | null> {
+    const result = await this.db.query.userIdentifiers.findFirst({
+      where: (userIdentifiers, { eq, and }) =>
+        and(
+          eq(userIdentifiers.type, identifier.type),
+          eq(userIdentifiers.value, identifier.value),
+        ),
+      with: {
+        user: true,
+      },
+    })
+
+    if (!result?.user) return null
+
+    return {
+      userId: result.user.id,
+      mfaEnabled: result.user.mfaEnabled,
+    }
+  }
+
+  async enableMfa(userId: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ mfaEnabled: true, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+  }
+
+  async disableMfa(userId: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ mfaEnabled: false, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+  }
+
   // Session operations
-  async createSession(
-    userId: string,
-    token: string,
-    expiresAt: Date,
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<KenmonSession> {
+  async createSession(data: {
+    userId: string
+    token: string
+    expiresAt: Date
+    mfaEnabled: boolean
+    mfaVerified: boolean
+    ipAddress?: string
+    userAgent?: string
+  }): Promise<KenmonSession> {
     const [session] = await this.db
       .insert(sessions)
       .values({
-        userId,
-        token,
-        expiresAt,
-        ipAddress,
-        userAgent,
+        userId: data.userId,
+        token: data.token,
+        expiresAt: data.expiresAt,
+        mfaEnabled: data.mfaEnabled,
+        mfaVerified: data.mfaVerified,
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
         invalidated: false,
       })
       .returning()
@@ -90,6 +130,8 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
       invalidatedAt: session.invalidatedAt ?? undefined,
       ipAddress: session.ipAddress ?? undefined,
       userAgent: session.userAgent ?? undefined,
+      mfaEnabled: session.mfaEnabled,
+      mfaVerified: session.mfaVerified,
     }
   }
 
@@ -114,12 +156,19 @@ export class DrizzleSessionStorage implements KenmonStorage<User> {
       invalidatedAt: session.invalidatedAt ?? undefined,
       ipAddress: session.ipAddress ?? undefined,
       userAgent: session.userAgent ?? undefined,
+      mfaEnabled: session.mfaEnabled,
+      mfaVerified: session.mfaVerified,
     }
   }
 
   async updateSession(
     sessionId: string,
-    data: { expiresAt?: Date; refreshedAt?: Date; usedAt?: Date },
+    data: {
+      expiresAt?: Date
+      refreshedAt?: Date
+      usedAt?: Date
+      mfaVerified?: boolean
+    },
   ): Promise<void> {
     await this.db.update(sessions).set(data).where(eq(sessions.id, sessionId))
   }

@@ -12,6 +12,7 @@ import { relations } from 'drizzle-orm'
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
+  mfaEnabled: boolean('mfa_enabled').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
@@ -56,6 +57,8 @@ export const sessions = pgTable('sessions', {
   expiresAt: timestamp('expires_at').notNull(),
   invalidated: boolean('invalidated').notNull().default(false),
   invalidatedAt: timestamp('invalidated_at'),
+  mfaEnabled: boolean('mfa_enabled').notNull().default(false),
+  mfaVerified: boolean('mfa_verified').notNull().default(false),
   ipAddress: varchar('ip_address', { length: 45 }),
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at').notNull().defaultNow(),

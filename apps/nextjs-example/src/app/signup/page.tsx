@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '../../lib/auth/auth'
+import { emailOTPAuthenticator } from '../../lib/auth/authenticators/emailOtp'
 import { getRequestMetadata } from '../../lib/auth/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,11 +50,7 @@ export default async function SignUpPage({
       redirect(`/signup?error=${encodeURIComponent('Email is required')}`)
     }
 
-    const result = await auth.prepare({
-      type: 'email-otp',
-      intent: 'sign-up',
-      data: { email },
-    })
+    const result = await emailOTPAuthenticator.sendOTP(email)
 
     if (!result.success) {
       console.error(result.error)
@@ -79,20 +76,34 @@ export default async function SignUpPage({
       )
     }
 
+    // Verify OTP first
+    const otpResult = await emailOTPAuthenticator.verifyOTP({
+      email,
+      otpId,
+      code,
+    })
+
+    if (!otpResult.success) {
+      redirect(
+        `/signup?step=otp&email=${encodeURIComponent(email)}&otpId=${otpId}&error=${encodeURIComponent(otpResult.error.message)}`,
+      )
+    }
+
+    const identifier = otpResult.data // { type: 'email-otp', value: email }
+
     // Extract IP address and user agent from request headers
     const { ipAddress, userAgent } = await getRequestMetadata()
 
-    const result = await auth.authenticate({
-      type: 'email-otp',
-      intent: 'sign-up',
-      data: { email, otpId, code },
-      ipAddress,
-      userAgent,
-    })
+    // Sign up with the verified identifier
+    const signUpResult = await auth.signUp(
+      identifier,
+      {}, // User data (empty for now)
+      { ipAddress, userAgent },
+    )
 
-    if (!result.success) {
+    if (!signUpResult.success) {
       redirect(
-        `/signup?step=otp&email=${encodeURIComponent(email)}&otpId=${otpId}&error=${encodeURIComponent(result.error.message)}`,
+        `/signup?step=otp&email=${encodeURIComponent(email)}&otpId=${otpId}&error=${encodeURIComponent(signUpResult.error.message)}`,
       )
     }
 
