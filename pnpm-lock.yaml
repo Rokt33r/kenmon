@@ -23,9 +23,9 @@ importers:
       '@aws-sdk/client-ses':
         specifier: ^3.922.0
         version: 3.922.0
-      '@kenmon/email-otp-provider':
+      '@kenmon/email-otp-authenticator':
         specifier: workspace:*
-        version: link:../../packages/email-otp-provider
+        version: link:../../packages/email-otp-authenticator
       '@kenmon/nextjs-adapter':
         specifier: workspace:*
         version: link:../../packages/nextjs-adapter
@@ -108,9 +108,9 @@ importers:
       '@aws-sdk/client-ses':
         specifier: ^3.709.0
         version: 3.922.0
-      '@kenmon/email-otp-provider':
+      '@kenmon/email-otp-authenticator':
         specifier: workspace:*
-        version: link:../../packages/email-otp-provider
+        version: link:../../packages/email-otp-authenticator
       '@kenmon/react-router-adapter':
         specifier: workspace:*
         version: link:../../packages/react-router-adapter
@@ -205,9 +205,9 @@ importers:
       '@aws-sdk/client-ses':
         specifier: ^3.922.0
         version: 3.922.0
-      '@kenmon/email-otp-provider':
+      '@kenmon/email-otp-authenticator':
         specifier: workspace:*
-        version: link:../../packages/email-otp-provider
+        version: link:../../packages/email-otp-authenticator
       drizzle-orm:
         specifier: ^0.44.7
         version: 0.44.7(gel@2.1.1)(postgres@3.4.7)
@@ -215,7 +215,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/kenmon
 
-  packages/email-otp-provider:
+  packages/email-otp-authenticator:
     dependencies:
       date-fns:
         specifier: ^4.1.0

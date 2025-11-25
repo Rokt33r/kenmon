@@ -1,6 +1,7 @@
 import { Link, redirect, useSearchParams, Form } from 'react-router'
 import type { Route } from './+types/signin'
 import { auth } from '@/lib/auth/auth'
+import { emailOTPAuthenticator } from '@/lib/auth/authenticators/emailOtp'
 import { getRequestMetadata } from '@/lib/auth/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,11 +42,7 @@ export async function action({ request }: Route.ActionArgs) {
       throw redirect(`/signin?error=${encodeURIComponent('Email is required')}`)
     }
 
-    const result = await auth.prepare({
-      type: 'email-otp',
-      intent: 'sign-in',
-      data: { email },
-    })
+    const result = await emailOTPAuthenticator.sendOTP(email)
 
     if (!result.success) {
       console.error(result.error)
@@ -70,20 +67,33 @@ export async function action({ request }: Route.ActionArgs) {
       )
     }
 
+    // Verify OTP first
+    const otpResult = await emailOTPAuthenticator.verifyOTP({
+      email,
+      otpId,
+      code,
+    })
+
+    if (!otpResult.success) {
+      throw redirect(
+        `/signin?step=otp&email=${encodeURIComponent(email)}&otpId=${otpId}&error=${encodeURIComponent(otpResult.error.message)}`,
+      )
+    }
+
+    const identifier = otpResult.data // { type: 'email-otp', value: email }
+
     // Extract IP address and user agent from request headers
     const { ipAddress, userAgent } = getRequestMetadata(request)
 
-    const result = await auth.authenticate({
-      type: 'email-otp',
-      intent: 'sign-in',
-      data: { email, otpId, code },
+    // Sign in with the verified identifier
+    const signInResult = await auth.signIn(identifier, {
       ipAddress,
       userAgent,
     })
 
-    if (!result.success) {
+    if (!signInResult.success) {
       throw redirect(
-        `/signin?step=otp&email=${encodeURIComponent(email)}&otpId=${otpId}&error=${encodeURIComponent(result.error.message)}`,
+        `/signin?step=otp&email=${encodeURIComponent(email)}&otpId=${otpId}&error=${encodeURIComponent(signInResult.error.message)}`,
       )
     }
 

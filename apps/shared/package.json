@@ -7,6 +7,6 @@
     "drizzle-orm": "^0.44.7",
     "@aws-sdk/client-ses": "^3.922.0",
     "kenmon": "workspace:*",
-    "@kenmon/email-otp-provider": "workspace:*"
+    "@kenmon/email-otp-authenticator": "workspace:*"
   }
 }

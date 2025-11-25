@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.922.0",
-    "@kenmon/email-otp-provider": "workspace:*",
+    "@kenmon/email-otp-authenticator": "workspace:*",
     "@kenmon/nextjs-adapter": "workspace:*",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
