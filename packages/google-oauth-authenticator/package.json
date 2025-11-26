@@ -1,0 +1,54 @@
+{
+  "name": "@kenmon/google-oauth-authenticator",
+  "version": "1.0.0-pre.0",
+  "description": "Google OAuth authenticator for Kenmon",
+  "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "authentication",
+    "auth",
+    "oauth",
+    "google",
+    "kenmon"
+  ],
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "scripts": {
+    "test": "vitest run",
+    "tsc": "tsc --noEmit",
+    "build": "npm run build:types && npm run build:esm && npm run build:cjs",
+    "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
+    "build:esm": "tsc --module es2020 --moduleResolution bundler --outDir dist/esm",
+    "build:cjs": "tsc --module commonjs --moduleResolution node --outDir dist/cjs && echo '{\"type\": \"commonjs\"}' > dist/cjs/package.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^4.1.12"
+  },
+  "peerDependencies": {
+    "kenmon": "^1.0.0-pre.0"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^20.0.0",
+    "kenmon": "workspace:*",
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.8"
+  }
+}
