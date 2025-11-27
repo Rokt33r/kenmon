@@ -1,4 +1,4 @@
-import { KenmonEmailOTPAuthenticator } from '@kenmon/email-otp-provider'
+import { KenmonEmailOTPAuthenticator } from '@kenmon/email-otp-authenticator'
 import { DrizzleEmailOTPStorage } from '@shared/storage/drizzleStorage'
 import { MockMailer } from '@shared/mailers/mockMailer'
 import { db } from '../../db'
