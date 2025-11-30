@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { SigninOTPForm } from '@/components/signin-otp-form'
-import { GoogleLogo } from '@/components/google-logo'
+import { GoogleLogo } from '@shared/components/google-logo'
 
 export default async function SignInPage({
   searchParams,

@@ -2,7 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '../../lib/auth/auth'
-import { emailOTPAuthenticator } from '../../lib/auth/authenticators/emailOtp'
+import { emailOTPAuthenticator } from '../../lib/auth/authenticators/email-otp'
 import { googleOAuthAuthenticator } from '../../lib/auth/authenticators/google'
 import { getRequestMetadata } from '../../lib/auth/utils'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { SignupOTPForm } from '@/components/signup-otp-form'
-import { GoogleLogo } from '@/components/google-logo'
+import { GoogleLogo } from '@shared/components/google-logo'
 
 export default async function SignUpPage({
   searchParams,

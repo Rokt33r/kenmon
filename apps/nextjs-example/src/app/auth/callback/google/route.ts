@@ -26,8 +26,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const identifier = result.data
-  const { intent } = identifier.data
+  const { intent, identifier } = result.data
 
   // Extract IP address and user agent from request headers
   const ipAddress = request.headers.get('x-forwarded-for') || undefined
