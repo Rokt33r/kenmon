@@ -53,3 +53,11 @@ export class KenmonSessionExpiredError extends KenmonError {
     Object.setPrototypeOf(this, KenmonSessionExpiredError.prototype)
   }
 }
+
+export class KenmonMfaFailedError extends KenmonError {
+  constructor() {
+    super('MFA verification required')
+    this.name = 'KenmonMfaFailedError'
+    Object.setPrototypeOf(this, KenmonMfaFailedError.prototype)
+  }
+}

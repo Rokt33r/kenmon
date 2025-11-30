@@ -18,6 +18,7 @@ import {
   KenmonSessionNotFoundError,
   KenmonInvalidSessionError,
   KenmonSessionExpiredError,
+  KenmonMfaFailedError,
 } from './errors'
 
 const defaultSessionCookieName = 'session'
@@ -133,7 +134,9 @@ export class KenmonAuthService<U> {
     return session
   }
 
-  async verifySession(): Promise<
+  async verifySession(options?: {
+    skipMfaCheck?: boolean
+  }): Promise<
     KenmonReturnType<{
       id: string
       userId: string
@@ -144,6 +147,8 @@ export class KenmonAuthService<U> {
       mfaEnabled: boolean
     }>
   > {
+    const skipMfaCheck = options?.skipMfaCheck || false
+
     const cookieValue = await this.adapter.getCookie(
       this.session.cookieName || defaultSessionCookieName,
     )
@@ -165,6 +170,10 @@ export class KenmonAuthService<U> {
 
       if (isAfter(new Date(), session.expiresAt)) {
         return { success: false, error: new KenmonSessionExpiredError() }
+      }
+
+      if (!skipMfaCheck && session.mfaEnabled && !session.mfaVerified) {
+        return { success: false, error: new KenmonMfaFailedError() }
       }
 
       // Update usedAt timestamp
