@@ -45,17 +45,23 @@ export const googleAuth = new KenmonGoogleOAuthAuthenticator({
 })
 ```
 
-### Sign In Flow
+### Step 1: Redirect to Google
 
-#### Step 1: Redirect to Google
+Choose the intent based on the user's action:
 
 ```typescript
-// In your sign-in route
+// For sign-in
 const authUrl = googleAuth.getAuthUrl('sign-in')
+redirect(authUrl)
+
+// For sign-up
+const authUrl = googleAuth.getAuthUrl('sign-up')
 redirect(authUrl)
 ```
 
-#### Step 2: Handle OAuth Callback
+### Step 2: Handle OAuth Callback
+
+The callback route handles both sign-in and sign-up based on the intent:
 
 ```typescript
 // In your OAuth callback route (e.g., /auth/callback/google)
@@ -68,7 +74,7 @@ export async function GET(request: Request) {
     return redirect('/signin?error=Missing parameters')
   }
 
-  // Verify callback and get user identifier
+  // Verify callback and get intent and identifier
   const result = await googleAuth.verifyCallback(code, state)
 
   if (!result.success) {
@@ -76,8 +82,7 @@ export async function GET(request: Request) {
     return redirect(`/signin?error=${encodeURIComponent(result.error.message)}`)
   }
 
-  const identifier = result.data
-  const { intent } = identifier.data
+  const { intent, identifier } = result.data
 
   // Get request metadata
   const ipAddress = request.headers.get('x-forwarded-for') || undefined
@@ -100,30 +105,27 @@ export async function GET(request: Request) {
 }
 ```
 
-### Sign Up Flow
+## TypeScript Types
 
-Same as sign-in, but use `'sign-up'` intent:
-
-```typescript
-const authUrl = googleAuth.getAuthUrl('sign-up')
-redirect(authUrl)
-```
-
-## Returned User Data
-
-The `identifier.data` object contains:
+The authenticator exports typed interfaces for better IDE support:
 
 ```typescript
-{
-  googleId: string         // Unique Google user ID
-  email: string            // User's email
-  emailVerified: boolean   // Is email verified by Google?
-  name: string             // Full name
-  givenName: string        // First name
-  familyName: string       // Last name
-  picture: string          // Profile picture URL
-  locale: string           // User's locale (e.g., "en")
-  intent: 'sign-in' | 'sign-up'  // Original intent
+import type { KenmonGoogleOAuthIdentifier } from '@kenmon/google-oauth-authenticator'
+
+// The identifier returned from verifyCallback has this shape:
+interface KenmonGoogleOAuthIdentifier {
+  type: 'google-oauth'
+  value: string // Google user ID
+  data: {
+    googleId: string         // Unique Google user ID
+    email: string            // User's email
+    emailVerified: boolean   // Is email verified by Google?
+    name: string             // Full name
+    givenName: string        // First name
+    familyName: string       // Last name
+    picture: string          // Profile picture URL
+    locale: string           // User's locale (e.g., "en")
+  }
 }
 ```
 
@@ -176,12 +178,15 @@ export async function GET(request: Request) {
     return Response.redirect(`/signin?error=${encodeURIComponent(result.error.message)}`)
   }
 
-  const { intent } = result.data.data
+  const { intent, identifier } = result.data
+
+  const ipAddress = request.headers.get('x-forwarded-for') || undefined
+  const userAgent = request.headers.get('user-agent') || undefined
+
   if (intent === 'sign-in') {
-    await auth.signIn(result.data, {
-      ipAddress: request.headers.get('x-forwarded-for') || undefined,
-      userAgent: request.headers.get('user-agent') || undefined,
-    })
+    await auth.signIn(identifier, { ipAddress, userAgent })
+  } else {
+    await auth.signUp(identifier, {}, { ipAddress, userAgent })
   }
 
   return Response.redirect('/')

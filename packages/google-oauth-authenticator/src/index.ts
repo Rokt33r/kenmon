@@ -1,12 +1,13 @@
 import { google } from 'googleapis'
 import jwt from 'jsonwebtoken'
 import { randomBytes } from 'crypto'
-import type { KenmonIdentifier, KenmonReturnType } from 'kenmon'
+import type { KenmonReturnType } from 'kenmon'
 import { KenmonError } from 'kenmon'
 import type {
   KenmonGoogleOAuthAuthenticatorConfig,
   KenmonGoogleOAuthData,
   KenmonGoogleOAuthErrorReason,
+  KenmonGoogleOAuthIdentifier,
   GoogleUserInfo,
   StatePayload,
 } from './types'
@@ -71,12 +72,17 @@ export class KenmonGoogleOAuthAuthenticator {
    * Verify OAuth callback and exchange code for user profile
    * @param code - OAuth authorization code from callback
    * @param state - JWT state token from callback
-   * @returns KenmonIdentifier with user profile data
+   * @returns Object with intent and KenmonGoogleOAuthIdentifier
    */
   async verifyCallback(
     code: string,
     state: string,
-  ): Promise<KenmonReturnType<KenmonIdentifier>> {
+  ): Promise<
+    KenmonReturnType<{
+      intent: 'sign-in' | 'sign-up'
+      identifier: KenmonGoogleOAuthIdentifier
+    }>
+  > {
     // Verify state token
     const statePayload = this.verifyStateToken(state)
     if (!statePayload) {
@@ -113,7 +119,7 @@ export class KenmonGoogleOAuthAuthenticator {
       }
 
       // Build KenmonIdentifier with user data
-      const identifier: KenmonIdentifier = {
+      const identifier: KenmonGoogleOAuthIdentifier = {
         type: 'google-oauth',
         value: payload.sub, // Google user ID
         data: {
@@ -125,13 +131,15 @@ export class KenmonGoogleOAuthAuthenticator {
           familyName: payload.family_name,
           picture: payload.picture,
           locale: payload.locale,
-          intent: statePayload.intent,
         } satisfies KenmonGoogleOAuthData,
       }
 
       return {
         success: true,
-        data: identifier,
+        data: {
+          intent: statePayload.intent,
+          identifier,
+        },
       }
     } catch (error) {
       if (error instanceof Error) {

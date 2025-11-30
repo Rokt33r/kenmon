@@ -1,3 +1,5 @@
+import type { KenmonIdentifier } from 'kenmon'
+
 export interface KenmonGoogleOAuthAuthenticatorConfig {
   clientId: string
   clientSecret: string
@@ -36,7 +38,16 @@ export interface KenmonGoogleOAuthData {
   familyName: string
   picture: string
   locale: string
-  intent: 'sign-in' | 'sign-up'
+}
+
+/**
+ * Google OAuth identifier with typed data
+ * Extends KenmonIdentifier with Google-specific user profile data
+ */
+export interface KenmonGoogleOAuthIdentifier extends KenmonIdentifier {
+  type: 'google-oauth'
+  value: string // Google ID
+  data: KenmonGoogleOAuthData
 }
 
 export interface StatePayload {
