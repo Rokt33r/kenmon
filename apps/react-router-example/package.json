@@ -13,6 +13,7 @@
   "dependencies": {
     "@aws-sdk/client-ses": "^3.709.0",
     "@kenmon/email-otp-authenticator": "workspace:*",
+    "@kenmon/google-oauth-authenticator": "workspace:*",
     "@kenmon/react-router-adapter": "workspace:*",
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-slot": "^1.1.1",

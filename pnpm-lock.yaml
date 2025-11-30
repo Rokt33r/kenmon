@@ -114,6 +114,9 @@ importers:
       '@kenmon/email-otp-authenticator':
         specifier: workspace:*
         version: link:../../packages/email-otp-authenticator
+      '@kenmon/google-oauth-authenticator':
+        specifier: workspace:*
+        version: link:../../packages/google-oauth-authenticator
       '@kenmon/react-router-adapter':
         specifier: workspace:*
         version: link:../../packages/react-router-adapter
