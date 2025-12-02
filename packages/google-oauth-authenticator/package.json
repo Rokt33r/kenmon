@@ -1,6 +1,6 @@
 {
   "name": "@kenmon/google-oauth-authenticator",
-  "version": "1.0.0-pre.0",
+  "version": "1.0.0-pre.1",
   "description": "Google OAuth authenticator for Kenmon",
   "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
   "license": "MIT",
@@ -42,7 +42,7 @@
     "zod": "^4.1.12"
   },
   "peerDependencies": {
-    "kenmon": "^1.0.0-pre.0"
+    "kenmon": "^1.0.0-pre.1"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.7",

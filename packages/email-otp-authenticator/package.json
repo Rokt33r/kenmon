@@ -1,6 +1,6 @@
 {
   "name": "@kenmon/email-otp-authenticator",
-  "version": "1.0.0-pre.0",
+  "version": "1.0.0-pre.1",
   "description": "Email OTP authenticator for Kenmon",
   "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
   "license": "MIT",
@@ -41,7 +41,7 @@
     "zod": "^4.1.12"
   },
   "peerDependencies": {
-    "kenmon": "^1.0.0-pre.0"
+    "kenmon": "^1.0.0-pre.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
