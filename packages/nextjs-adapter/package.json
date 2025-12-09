@@ -1,6 +1,6 @@
 {
   "name": "@kenmon/nextjs-adapter",
-  "version": "1.0.0-pre.2",
+  "version": "1.0.0-pre.3",
   "description": "Next.js framework adapter for Kenmon",
   "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
   "license": "MIT",

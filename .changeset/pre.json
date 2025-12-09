@@ -11,6 +11,7 @@
     "@kenmon-apps/shared": "0.0.1"
   },
   "changesets": [
-    "cyan-drinks-search"
+    "cyan-drinks-search",
+    "slick-spies-like"
   ]
 }
