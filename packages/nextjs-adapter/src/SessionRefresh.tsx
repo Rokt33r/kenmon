@@ -1,5 +1,6 @@
 'use client'
 
+import { KenmonReturnType } from 'kenmon'
 import { useEffect, useRef } from 'react'
 
 const CHECK_INTERVAL = 15 * 60 * 1000 // 15 minutes in milliseconds
@@ -19,7 +20,7 @@ interface SessionRefreshProps {
    * export const refreshSession = createRefreshSessionAction(auth)
    * ```
    */
-  refreshAction: () => Promise<{ success: boolean; error?: string }>
+  refreshAction: () => Promise<KenmonReturnType<void>>
   /**
    * Time in seconds before a session needs refresh.
    * Should match the refreshInterval configured in your auth service.
@@ -156,7 +157,7 @@ export function SessionRefresh({
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Empty deps - we use refs for dynamic values
+  }, [])
 
   return null
 }

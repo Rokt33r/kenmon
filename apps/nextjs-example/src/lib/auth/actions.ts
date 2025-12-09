@@ -10,15 +10,6 @@ import { auth } from './auth'
  *
  * @returns Object with success status and optional error message
  */
-export async function refreshSession(): Promise<{
-  success: boolean
-  error?: string
-}> {
-  const result = await auth.refreshSession()
-
-  if (!result.success) {
-    return { success: false, error: result.error.message }
-  }
-
-  return { success: true }
+export async function refreshSessionAction() {
+  return auth.refreshSession()
 }
