@@ -1,5 +1,11 @@
 # kenmon
 
+## 1.0.0-pre.2
+
+### Patch Changes
+
+- Updated readme
+
 ## 1.0.0-pre.1
 
 ### Patch Changes

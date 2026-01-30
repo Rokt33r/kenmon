@@ -12,6 +12,7 @@
   },
   "changesets": [
     "cyan-drinks-search",
+    "fluffy-glasses-fetch",
     "slick-spies-like"
   ]
 }
