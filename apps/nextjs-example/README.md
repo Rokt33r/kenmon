@@ -179,4 +179,4 @@ docker-compose down -v
 
 - [kenmon](../../packages/kenmon) - Core authentication service
 - [@kenmon/nextjs-adapter](../../packages/nextjs-adapter) - Next.js adapter
-- [@kenmon/email-otp-provider](../../packages/email-otp-provider) - Email OTP provider
+- [@kenmon/email-otp-authenticator](../../packages/email-otp-authenticator) - Email OTP authenticator

@@ -1,6 +1,6 @@
 # kenmon
 
-Core authentication service with pluggable providers and adapters.
+Core authentication service with pluggable authenticators and adapters.
 
 ## Installation
 
@@ -12,7 +12,7 @@ npm install kenmon
 
 **Kenmon** is built around three core abstractions:
 
-- **Providers** - Authentication methods (email OTP, OAuth, etc.)
+- **Authenticators** - Authentication methods (email OTP, OAuth, etc.)
 - **Adapters** - Framework-specific integrations (cookies)
 - **Storage** - User and session persistence
 
@@ -20,7 +20,7 @@ npm install kenmon
 
 ```typescript
 import { KenmonAuthService } from 'kenmon'
-import { KenmonEmailOTPProvider } from '@kenmon/email-otp-provider'
+import { KenmonEmailOTPAuthenticator } from '@kenmon/email-otp-authenticator'
 import { KenmonNextJSAdapter } from '@kenmon/nextjs-adapter'
 
 // Implement session storage
@@ -90,52 +90,50 @@ const auth = new KenmonAuthService({
   adapter: new KenmonNextJSAdapter(),
 })
 
-// Register provider
-auth.registerProvider(
-  new KenmonEmailOTPProvider({
-    mailer: new MyMailer(),
-    otpStorage: new MyEmailOTPStorage(),
-  }),
-)
+// Create authenticator
+const emailOTP = new KenmonEmailOTPAuthenticator({
+  mailer: new MyMailer(),
+  otpStorage: new MyEmailOTPStorage(),
+  emailFrom: 'noreply@example.com',
+})
 ```
 
 ## Usage Flow
 
 ```typescript
-// 1. Prepare (send OTP email)
-const prepareResult = await auth.prepare({
-  type: 'email-otp',
-  intent: 'sign-in',
-  data: { email: 'user@example.com' },
-})
+// 1. Send OTP email
+const sendResult = await emailOTP.sendOTP('user@example.com')
+if (!sendResult.success) {
+  // Handle error
+}
+const { otpId, signature } = sendResult.data
 
-// 2. Authenticate (verify OTP)
-const authResult = await auth.authenticate({
-  type: 'email-otp',
-  intent: 'sign-in',
-  data: { email, otpId, code },
-  ipAddress,
-  userAgent,
-})
+// 2. Verify OTP and sign in
+const verifyResult = await emailOTP.verifyOTP({ email, otpId, code })
+if (!verifyResult.success) {
+  // Handle error
+}
 
-if (authResult.success) {
+// 3. Sign in with the verified identifier
+const signInResult = await auth.signIn(verifyResult.data, { ipAddress, userAgent })
+if (signInResult.success) {
   // Session created automatically
 }
 
-// 3. Verify session
+// 4. Verify session
 const sessionResult = await auth.verifySession()
 if (sessionResult.success) {
   const session = sessionResult.data
   // Use session...
 }
 
-// 4. Refresh session
+// 5. Refresh session
 const refreshResult = await auth.refreshSession()
 if (refreshResult.success) {
   // Session refreshed
 }
 
-// 5. Sign out
+// 6. Sign out
 await auth.signOut()
 // Or sign out from all devices
 await auth.signOut({ allSessions: true })
@@ -181,4 +179,4 @@ interface KenmonSession {
 
 - [Full example](../../apps/nextjs-example) - Complete Next.js implementation with Drizzle
 - [@kenmon/nextjs-adapter](../nextjs-adapter) - Next.js framework adapter
-- [@kenmon/email-otp-provider](../email-otp-provider) - Email OTP authentication provider
+- [@kenmon/email-otp-authenticator](../email-otp-authenticator) - Email OTP authenticator

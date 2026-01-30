@@ -200,4 +200,4 @@ docker-compose down -v
 
 - [kenmon](../../packages/kenmon) - Core authentication service
 - [@kenmon/react-router-adapter](../../packages/react-router-adapter) - React Router adapter
-- [@kenmon/email-otp-provider](../../packages/email-otp-provider) - Email OTP provider
+- [@kenmon/email-otp-authenticator](../../packages/email-otp-authenticator) - Email OTP authenticator

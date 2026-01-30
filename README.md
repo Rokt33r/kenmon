@@ -8,17 +8,16 @@ A portable authentication module with pluggable providers and framework adapters
 
 - **[kenmon](./packages/kenmon)** - Core authentication service
 - **[@kenmon/nextjs-adapter](./packages/nextjs-adapter)** - Next.js framework adapter
-- **[@kenmon/email-otp-provider](./packages/email-otp-provider)** - Email OTP authentication provider
+- **[@kenmon/react-router-adapter](./packages/react-router-adapter)** - React Router framework adapter
+- **[@kenmon/email-otp-authenticator](./packages/email-otp-authenticator)** - Email OTP authenticator
+- **[@kenmon/google-oauth-authenticator](./packages/google-oauth-authenticator)** - Google OAuth authenticator
 
 ### Apps
 
+Check these example to learn how to use the packages.
+
 - **[nextjs-example](./apps/nextjs-example)** - Full Next.js implementation example
-
-## Quick Start
-
-```bash
-pnpm add kenmon @kenmon/email-otp-provider @kenmon/nextjs-adapter
-```
+- **[react-router-example](./apps/react-router-example)** - Full React Router implementation example
 
 See individual package READMEs for usage details and the [nextjs-example](./apps/nextjs-example) for a complete implementation.
 
@@ -44,9 +43,11 @@ This monorepo uses [Changesets](https://github.com/changesets/changesets) for ve
 1. **Make your code changes** across one or more packages
 
 2. **Create a changeset** to document the changes:
+
    ```bash
    pnpm changeset
    ```
+
    - Select which packages changed (use spacebar to select, enter to confirm)
    - Choose the bump type:
      - `patch` - Bug fixes (1.0.0-pre.0 → 1.0.0-pre.1)
@@ -55,24 +56,29 @@ This monorepo uses [Changesets](https://github.com/changesets/changesets) for ve
    - Write a summary of the changes (used in CHANGELOG.md)
 
 3. **Version the packages** to bump versions and generate changelogs:
+
    ```bash
    pnpm version-packages
    ```
+
    This will:
    - Update package.json versions with pre-release numbers (e.g., `1.0.0-pre.1`)
    - Generate/update CHANGELOG.md files
    - Delete consumed changeset files
 
 4. **Review and commit** the version changes:
+
    ```bash
    git add .
    git commit -m "Version packages"
    ```
 
 5. **Publish to npm**:
+
    ```bash
    pnpm release
    ```
+
    This will:
    - Build all packages
    - Publish changed packages to npm with the `pre` tag
@@ -88,11 +94,13 @@ This monorepo uses [Changesets](https://github.com/changesets/changesets) for ve
 When ready to publish a stable 1.0.0 release:
 
 1. **Exit pre-release mode**:
+
    ```bash
    pnpm changeset pre exit
    ```
 
 2. **Create a final changeset** for the stable release:
+
    ```bash
    pnpm changeset
    ```
