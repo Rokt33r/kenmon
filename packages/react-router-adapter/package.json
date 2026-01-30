@@ -16,22 +16,24 @@
     "README.md"
   ],
   "type": "module",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js",
-      "types": "./dist/types/index.d.ts"
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
   "scripts": {
     "test": "tsc --noEmit",
-    "build": "npm run build:types && npm run build:esm && npm run build:cjs",
-    "build:types": "tsc --emitDeclarationOnly --outDir dist/types",
-    "build:esm": "tsc --module es2020 --moduleResolution bundler --outDir dist/esm",
-    "build:cjs": "tsc --module commonjs --moduleResolution node --outDir dist/cjs && echo '{\"type\": \"commonjs\"}' > dist/cjs/package.json",
+    "build": "tsdown",
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
