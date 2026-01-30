@@ -1,5 +1,13 @@
 # @kenmon/nextjs-adapter
 
+## 1.0.0-pre.5
+
+### Patch Changes
+
+- Fix esm modules
+- Updated dependencies
+  - kenmon@1.0.0-pre.3
+
 ## 1.0.0-pre.4
 
 ### Patch Changes
