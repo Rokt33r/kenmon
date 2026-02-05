@@ -76,7 +76,7 @@ interface SessionRefreshProps {
  * ] satisfies RouteConfig
  *
  * // 5. app/root.tsx (in your layout)
- * import { SessionRefresh } from '@kenmon/react-router-adapter'
+ * import { SessionRefresh } from '@kenmon/react-router-adapter/session-refresh'
  * <SessionRefresh method="post" action="/api/refresh" refreshInterval={86400} />
  * ```
  */

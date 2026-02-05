@@ -41,7 +41,7 @@ Provides React Router-specific implementations for:
 - **Middleware**: Sets up AsyncLocalStorage context for request/response access
 - **Cookie management**: Server-side cookie operations via request context
 - **SSR support**: Handles cookies during server-side rendering
-- **SessionRefresh component**: Automatic session renewal
+- **SessionRefresh component**: Automatic session renewal (separate client entry point)
 
 The middleware must be configured in your root route to enable the adapter to access request and response headers throughout your application.
 
@@ -113,7 +113,7 @@ export default [
 
 ```typescript
 // app/root.tsx
-import { SessionRefresh } from '@kenmon/react-router-adapter'
+import { SessionRefresh } from '@kenmon/react-router-adapter/session-refresh'
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (

@@ -1,5 +1,11 @@
 # @kenmon/react-router-adapter
 
+## 1.0.0-pre.4
+
+### Patch Changes
+
+- Export SessionRefresh component separately
+
 ## 1.0.0-pre.3
 
 ### Patch Changes

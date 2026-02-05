@@ -10,7 +10,7 @@ import {
 import type { Route } from './+types/root'
 import './app.css'
 import { kenmonReactRouterMiddleware } from '@kenmon/react-router-adapter'
-import { SessionRefresh } from './components/SessionRefresh'
+import { SessionRefresh } from '@kenmon/react-router-adapter/session-refresh'
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -35,7 +35,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <SessionRefresh />
+        <SessionRefresh action='/api/refresh' />
         {children}
         <ScrollRestoration />
         <Scripts />

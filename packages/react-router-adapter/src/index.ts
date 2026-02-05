@@ -113,4 +113,3 @@ export class KenmonReactRouterAdapter implements KenmonAdapter {
   }
 }
 
-export { SessionRefresh } from './SessionRefresh'
