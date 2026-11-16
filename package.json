@@ -2,6 +2,7 @@
   "name": "kenmon-monorepo",
   "version": "0.0.3",
   "private": true,
+  "type": "module",
   "description": "Portable authentication module - Monorepo",
   "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
   "license": "MIT",
@@ -14,7 +15,9 @@
     "dev:nextjs": "pnpm --filter nextjs dev",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "tag-release": "node scripts/tag-release.ts",
+    "push-release": "node scripts/push-release.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
