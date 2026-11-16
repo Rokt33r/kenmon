@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { addSeconds } from 'date-fns'
+import jwt from 'jsonwebtoken'
 import { KenmonAuthService } from '../auth'
 import { MockStorage, MockAdapter } from './helpers/mocks'
 import {
@@ -134,6 +135,34 @@ describe('refreshSession()', () => {
       if (!verifyResult2.success) throw new Error('Verification failed')
 
       expect(verifyResult2.data.id).toBe(originalSessionId)
+    })
+
+    it('should sign JWT with later exp and same token', async () => {
+      vi.useFakeTimers()
+      try {
+        await authService.signUp(defaultTestIdentifier, {})
+
+        const cookie1 = await adapter.getCookie('session')
+        const decoded1 = jwt.verify(cookie1!, testSecret) as {
+          token: string
+          exp: number
+        }
+
+        vi.advanceTimersByTime(5000)
+        const result = await authService.refreshSession()
+        expect(result.success).toBe(true)
+
+        const cookie2 = await adapter.getCookie('session')
+        const decoded2 = jwt.verify(cookie2!, testSecret) as {
+          token: string
+          exp: number
+        }
+
+        expect(decoded2.exp).toBeGreaterThan(decoded1.exp)
+        expect(decoded2.token).toBe(decoded1.token)
+      } finally {
+        vi.useRealTimers()
+      }
     })
 
     it('should handle multiple refresh calls', async () => {
