@@ -36,82 +36,37 @@ pnpm run clean
 
 ## Release Procedure
 
-This monorepo uses [Changesets](https://github.com/changesets/changesets) for version management and publishing. We use independent versioning with pre-release mode enabled.
+Each package in `packages/` has its own version and is released on its own. A release runs through two repo-local Claude Code skills, `/release-prep` and `/release-push`, on the `main` branch. CI publishes each package to npm.
 
-### Publishing a New Pre-release Version
+### Publishing a Release
 
-1. **Make your code changes** across one or more packages
+1. **Draft the release** with `/release-prep`. You can pass package names to limit the release, e.g. `/release-prep kenmon`.
 
-2. **Create a changeset** to document the changes:
+   For each package with user-facing changes since its last `<name>@<version>` tag, the skill:
+   - decides the next version and sets it in the package's `package.json`
+   - adds a `## <version>` entry at the top of the package's `CHANGELOG.md`
+   - raises a dependent's `kenmon` peer range only when the dependent needs the new `kenmon` version
 
-   ```bash
-   pnpm changeset
-   ```
+   The drafts stay uncommitted.
 
-   - Select which packages changed (use spacebar to select, enter to confirm)
-   - Choose the bump type:
-     - `patch` - Bug fixes (1.0.0-pre.0 → 1.0.0-pre.1)
-     - `minor` - New features (1.0.0-pre.0 → 1.0.1-pre.0)
-     - `major` - Breaking changes (1.0.0-pre.0 → 1.1.0-pre.0)
-   - Write a summary of the changes (used in CHANGELOG.md)
-
-3. **Version the packages** to bump versions and generate changelogs:
+2. **Review and stage the drafts**:
 
    ```bash
-   pnpm version-packages
+   git add packages/*/package.json packages/*/CHANGELOG.md
    ```
 
-   This will:
-   - Update package.json versions with pre-release numbers (e.g., `1.0.0-pre.1`)
-   - Generate/update CHANGELOG.md files
-   - Delete consumed changeset files
+   Staging the drafts is the confirmation. `/release-push` asks no question, and it releases only staged drafts.
 
-4. **Review and commit** the version changes:
+3. **Release** with `/release-push`. The skill:
+   - builds one `<name>@<version>` tag from each staged version change
+   - runs `pnpm tag-release <tags>`, which checks each tag against its staged `package.json`, commits the drafts, and tags the commit
+   - runs `pnpm push-release`, which pushes `main` and then each new tag one at a time
 
-   ```bash
-   git add .
-   git commit -m "Version packages"
-   ```
+4. **CI publishes** each tag. The `.github/workflows/release.yml` workflow runs once per tag and publishes that one package with npm Trusted Publishing. A prerelease version such as `1.0.0-pre.4` goes to the `pre` npm dist-tag, and a stable version goes to `latest`.
 
-5. **Publish to npm**:
+### Leaving the Pre-release Line
 
-   ```bash
-   pnpm release
-   ```
-
-   This will:
-   - Build all packages
-   - Publish changed packages to npm with the `pre` tag
-   - Create git tags for each version
-
-6. **Push changes and tags**:
-   ```bash
-   git push && git push --tags
-   ```
-
-### Exiting Pre-release Mode
-
-When ready to publish a stable 1.0.0 release:
-
-1. **Exit pre-release mode**:
-
-   ```bash
-   pnpm changeset pre exit
-   ```
-
-2. **Create a final changeset** for the stable release:
-
-   ```bash
-   pnpm changeset
-   ```
-
-3. **Version and publish** as normal:
-   ```bash
-   pnpm version-packages
-   git add . && git commit -m "Release v1.0.0"
-   pnpm release
-   git push && git push --tags
-   ```
+While a package is on `1.0.0-pre.N`, `/release-prep` drafts `1.0.0-pre.<N+1>`. To release a stable version, name it during the review, e.g. "release kenmon as 1.0.0", and `/release-prep` sets that version instead.
 
 ### Installing Pre-release Versions
 
