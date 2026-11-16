@@ -6,6 +6,7 @@
   "description": "Portable authentication module - Monorepo",
   "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
   "license": "MIT",
+  "packageManager": "pnpm@12.9.1",
   "scripts": {
     "build": "pnpm -r --filter='./packages/*' build",
     "clean": "pnpm -r --filter='./packages/*' clean",
