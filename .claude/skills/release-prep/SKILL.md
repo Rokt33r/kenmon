@@ -18,7 +18,7 @@ Decide the next version of each kenmon package that changed since its last relea
 
 Each release of a package is tagged `<name>@<version>`, e.g. `kenmon@1.0.0-pre.4` or `@kenmon/nextjs-adapter@1.0.0-pre.6`. The `version` in each `package.json` is the source of truth for the version. The CHANGELOG.md entry is release-note text only, and no script reads it.
 
-This skill writes the version bumps and changelog entries uncommitted and stops for review. `/release-push` then confirms the tags, commits, tags, and pushes them, and the `release.yml` workflow publishes each tag to npm.
+This skill writes the version bumps and changelog entries uncommitted and stops for review. The user confirms the release by staging the drafts. `/release-push` then commits, tags, and pushes the staged drafts with no question, and the `release.yml` workflow publishes each tag to npm.
 
 ## Arguments
 
@@ -111,11 +111,11 @@ For each drafted package, tell the user:
 - the range used, and whether it fell back to the full history
 - the version, with the reasoning
 - the peer range change, if any
-- the tag that `/release-push` will confirm: `<name>@<version>`
+- the tag that `/release-push` will create once the drafts are staged: `<name>@<version>`
 
 Then stop for review.
 
-- Next step: review the drafts, stage them with `git add` to mark them reviewed, then run `/release-push`.
+- Next step: review the drafts, stage them with `git add` to confirm the release, then run `/release-push`.
 - **The user changes a package's version during review?** → rerun `npm version <version> --no-git-tag-version` in its directory and update the `## <version>` heading of its CHANGELOG.md entry to match.
 
 ## Rules
@@ -123,5 +123,5 @@ Then stop for review.
 - **Repo-local skill**: it documents kenmon's own releases.
 - **Drives git directly**: no script backs it.
 - **Main only**: drafts only on the `main` branch, matching `origin/main`. When the checkout is clean, it switches to `main`, fast-forwards it from `origin/main`, and pushes local `main` commits that `origin/main` lacks.
-- **Decides and drafts only**: the versions and changelog entries stay uncommitted. `/release-push` confirms the tags, then commits, tags, and pushes.
+- **Decides and drafts only**: the versions and changelog entries stay uncommitted. Staging them confirms the release, and `/release-push` then commits, tags, and pushes them.
 - **Writes only `packages/*/package.json` and `packages/*/CHANGELOG.md`**: `pnpm tag-release` rejects any other change in the release commit.
