@@ -116,9 +116,56 @@ describe('verifySession()', () => {
 
       const tamperedToken = jwt.sign(tamperedPayload, testSecret, {
         algorithm: 'HS256',
+        expiresIn: 60,
       })
 
       await adapter.setCookie('session', tamperedToken)
+
+      const result = await authService.verifySession()
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toBeInstanceOf(KenmonInvalidSessionError)
+      }
+    })
+
+    it('should return session expired error for expired JWT', async () => {
+      await authService.signUp(defaultTestIdentifier, {})
+
+      const cookie = await adapter.getCookie('session')
+      const { sessionId, token } = jwt.decode(cookie!) as {
+        sessionId: string
+        token: string
+      }
+
+      const expiredToken = jwt.sign(
+        { sessionId, token, exp: Math.floor(Date.now() / 1000) - 10 },
+        testSecret,
+        { algorithm: 'HS256' },
+      )
+
+      await adapter.setCookie('session', expiredToken)
+
+      const result = await authService.verifySession()
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error).toBeInstanceOf(KenmonSessionExpiredError)
+      }
+    })
+
+    it('should reject JWT without exp claim', async () => {
+      await authService.signUp(defaultTestIdentifier, {})
+
+      const cookie = await adapter.getCookie('session')
+      const { sessionId, token } = jwt.decode(cookie!) as {
+        sessionId: string
+        token: string
+      }
+
+      const tokenWithoutExp = jwt.sign({ sessionId, token }, testSecret, {
+        algorithm: 'HS256',
+      })
+
+      await adapter.setCookie('session', tokenWithoutExp)
 
       const result = await authService.verifySession()
       expect(result.success).toBe(false)

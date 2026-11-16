@@ -103,6 +103,21 @@ describe('signIn()', () => {
       expect(session?.token).toBe(decoded.token)
     })
 
+    it('should set JWT exp to iat plus default TTL', async () => {
+      await storage.createUser(defaultTestIdentifier, {})
+
+      await authService.signIn(defaultTestIdentifier)
+
+      const cookie = await adapter.getCookie('session')
+      const decoded = jwt.verify(cookie!, testSecret) as {
+        iat: number
+        exp: number
+      }
+
+      const defaultTTL = 14 * 24 * 60 * 60
+      expect(decoded.exp).toBe(decoded.iat + defaultTTL)
+    })
+
     it('should set session expiration based on default TTL (14 days)', async () => {
       await storage.createUser(defaultTestIdentifier, {})
 

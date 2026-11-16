@@ -158,9 +158,18 @@ export class KenmonAuthService<U> {
     }
 
     try {
-      const decoded = jwt.verify(cookieValue, this.secret) as {
-        sessionId: string
-        token: string
+      let decoded: { sessionId: string; token: string; exp?: unknown }
+      try {
+        decoded = jwt.verify(cookieValue, this.secret) as typeof decoded
+      } catch (error) {
+        if (error instanceof jwt.TokenExpiredError) {
+          return { success: false, error: new KenmonSessionExpiredError() }
+        }
+        return { success: false, error: new KenmonInvalidSessionError() }
+      }
+
+      if (typeof decoded.exp !== 'number') {
+        return { success: false, error: new KenmonInvalidSessionError() }
       }
 
       const session = await this.storage.getSessionById(decoded.sessionId)
@@ -257,6 +266,7 @@ export class KenmonAuthService<U> {
 
     const jwtToken = jwt.sign(payload, this.secret, {
       algorithm: 'HS256',
+      expiresIn: this.session.ttl,
     })
 
     await this.adapter.setCookie(
