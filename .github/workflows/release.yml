@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'kenmon@*' # e.g. kenmon@1.0.0-pre.4
+      - '@kenmon/*@*' # e.g. @kenmon/nextjs-adapter@1.0.0-pre.6
+
+permissions:
+  id-token: write # OIDC for npm Trusted Publishing — no NPM_TOKEN
+  contents: read
+
+jobs:
+  release:
+    name: Publish the tagged package to npm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve the package from the tag
+        id: package
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          name="${TAG%@*}"
+          version="${TAG##*@}"
+          package_version="$(pnpm --filter "$name" exec node -p "require('./package.json').version")"
+          if [ "$package_version" != "$version" ]; then
+            echo "::error::$TAG does not match the package.json version of $name (found: '$package_version')."
+            exit 1
+          fi
+          if [[ "$version" == *-* ]]; then
+            prerelease="${version#*-}"
+            dist_tag="${prerelease%%.*}"
+          else
+            dist_tag=latest
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "dist_tag=$dist_tag" >> "$GITHUB_OUTPUT"
+          echo "Publishing $name@$version under the npm dist-tag $dist_tag"
+
+      - name: Build the package and its workspace dependencies
+        env:
+          PACKAGE_NAME: ${{ steps.package.outputs.name }}
+        run: pnpm --filter "$PACKAGE_NAME..." build
+
+      - name: Publish to npm
+        env:
+          PACKAGE_NAME: ${{ steps.package.outputs.name }}
+          DIST_TAG: ${{ steps.package.outputs.dist_tag }}
+        run: pnpm --filter "$PACKAGE_NAME" publish --tag "$DIST_TAG" --access public --no-git-checks

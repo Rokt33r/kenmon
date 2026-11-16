@@ -4,6 +4,11 @@
   "description": "React Router framework adapter for Kenmon",
   "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rokt33r/kenmon.git",
+    "directory": "packages/react-router-adapter"
+  },
   "keywords": [
     "authentication",
     "auth",
