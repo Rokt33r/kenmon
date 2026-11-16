@@ -42,31 +42,28 @@ Each package in `packages/` has its own version and is released on its own. A re
 
 1. **Draft the release** with `/release-prep`. You can pass package names to limit the release, e.g. `/release-prep kenmon`.
 
-   For each package with user-facing changes since its last `<name>@<version>` tag, the skill:
-   - decides the next version and sets it in the package's `package.json`
-   - adds a `## <version>` entry at the top of the package's `CHANGELOG.md`
-   - raises a dependent's `kenmon` peer range only when the dependent needs the new `kenmon` version
+   For each package with user-facing changes since its last `<name>@<version>` tag, the skill decides the next version and adds a `## <version>` entry at the top of the package's `CHANGELOG.md`. It does not edit `package.json`. The drafts stay uncommitted.
 
-   The drafts stay uncommitted.
+   When a dependent needs the new `kenmon` version, the skill stops and asks you to raise the dependent's `kenmon` peer range in a regular commit first.
 
 2. **Review and stage the drafts**:
 
    ```bash
-   git add packages/*/package.json packages/*/CHANGELOG.md
+   git add packages/*/CHANGELOG.md
    ```
 
    Staging the drafts is the confirmation. `/release-push` asks no question, and it releases only staged drafts.
 
 3. **Release** with `/release-push`. The skill:
-   - builds one `<name>@<version>` tag from each staged version change
-   - runs `pnpm tag-release <tags>`, which checks each tag against its staged `package.json`, commits the drafts, and tags the commit
+   - builds one `<name>@<version>` tag from the `## <version>` heading of each staged draft
+   - runs `pnpm tag-release <tags>`, which sets each version in `package.json`, commits it with the drafts, and tags the commit
    - runs `pnpm push-release`, which pushes `main` and then each new tag one at a time
 
 4. **CI publishes** each tag. The `.github/workflows/release.yml` workflow runs once per tag and publishes that one package with npm Trusted Publishing. A prerelease version such as `1.0.0-pre.4` goes to the `pre` npm dist-tag, and a stable version goes to `latest`.
 
 ### Leaving the Pre-release Line
 
-While a package is on `1.0.0-pre.N`, `/release-prep` drafts `1.0.0-pre.<N+1>`. To release a stable version, name it during the review, e.g. "release kenmon as 1.0.0", and `/release-prep` sets that version instead.
+While a package is on `1.0.0-pre.N`, `/release-prep` drafts `1.0.0-pre.<N+1>`. To release a stable version, name it during the review, e.g. "release kenmon as 1.0.0", and `/release-prep` writes that version in the changelog heading instead.
 
 ### Installing Pre-release Versions
 

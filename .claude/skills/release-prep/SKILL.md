@@ -1,6 +1,6 @@
 ---
 name: release-prep
-description: Decide the next version of each kenmon package that changed since its last release, set it in the package's package.json, and draft its CHANGELOG.md entry on main. First step of a release, before /release-push.
+description: Decide the next version of each kenmon package that changed since its last release, and draft its CHANGELOG.md entry under that version on main. First step of a release, before /release-push.
 argument-hint: '[package name ...]'
 ---
 
@@ -16,9 +16,9 @@ Decide the next version of each kenmon package that changed since its last relea
 | `packages/nextjs-adapter`             | `@kenmon/nextjs-adapter`             |
 | `packages/react-router-adapter`       | `@kenmon/react-router-adapter`       |
 
-Each release of a package is tagged `<name>@<version>`, e.g. `kenmon@1.0.0-pre.4` or `@kenmon/nextjs-adapter@1.0.0-pre.6`. The `version` in each `package.json` is the source of truth for the version. The CHANGELOG.md entry is release-note text only, and no script reads it.
+Each release of a package is tagged `<name>@<version>`, e.g. `kenmon@1.0.0-pre.4` or `@kenmon/nextjs-adapter@1.0.0-pre.6`.
 
-This skill writes the version bumps and changelog entries uncommitted and stops for review. The user confirms the release by staging the drafts. `/release-push` then commits, tags, and pushes the staged drafts with no question, and the `release.yml` workflow publishes each tag to npm.
+This skill writes only the changelog entries, uncommitted, and stops for review. Each entry's `## <version>` heading carries the version this skill decided. `package.json` stays unchanged. The user confirms the release by staging the drafts. `/release-push` then reads the version from each staged entry, and `pnpm tag-release` sets it in `package.json`, commits, and tags. The `release.yml` workflow publishes each tag to npm.
 
 ## Arguments
 
@@ -35,7 +35,7 @@ Zero or more package names or directory names.
 Releases run only on a `main` that matches `origin/main`.
 
 - Run `git status --porcelain`.
-- **Changes to `packages/*/package.json` or `packages/*/CHANGELOG.md`?** → name the paths, tell the user they are drafts from an earlier run to review, stage, and release with `/release-push`, or to discard, and stop.
+- **Changes to `packages/*/CHANGELOG.md`?** → name the paths, tell the user they are drafts from an earlier run to review, stage, and release with `/release-push`, or to discard, and stop.
 - **Any other change?** → name the paths, tell the user to commit or discard them, and stop.
 - Run `git rev-parse --abbrev-ref HEAD`.
 - **Branch is not `main`?** → run `git checkout main`.
@@ -74,17 +74,17 @@ Recommend one version per package, with one or two sentences of reasoning.
 
 `@kenmon/*` packages declare `kenmon` as a peer dependency (e.g. `"kenmon": "^1.0.0-pre.3"`) and as a `workspace:*` dev dependency. A caret range on a prerelease, such as `^1.0.0-pre.3`, already accepts every later `1.0.0-pre.N`.
 
-- **`kenmon` is released and a dependent's code now needs the new `kenmon` version (it calls a new API, or relies on new behavior)?** → raise that dependent's `peerDependencies.kenmon` to `^<new kenmon version>`, and release that dependent too, even when its own code did not change.
-- **The new `kenmon` version is outside a dependent's peer range (e.g. a stable `1.0.0` or a major bump)?** → raise the range and release the dependent the same way.
-- **Otherwise?** → leave the dependent's peer range and version alone.
-- MUST NOT change the `workspace:*` dev dependency.
+This skill never edits `package.json`, so a peer range change is a regular commit on `main` before the release.
+
+- **`kenmon` is released and a dependent's code now needs the new `kenmon` version (it calls a new API, or relies on new behavior)?** → name the dependent, and tell the user to raise its `peerDependencies.kenmon` to `^<new kenmon version>` in a commit on `main`, then rerun `/release-prep`. Write no drafts in this run, and stop.
+- **The new `kenmon` version is outside a dependent's peer range (e.g. a stable `1.0.0` or a major bump)?** → do the same.
+- **Otherwise?** → leave the dependent alone.
+- A commit that raises a dependent's `kenmon` peer range is user-facing for that dependent: release the dependent, with the bullet `- Requires kenmon@<version> or later.`
 
 ### 6. Write the drafts
 
 For each package to release:
 
-- Run `npm version <version> --no-git-tag-version` in `packages/<dir>`. This sets `version` in `package.json` and nothing else.
-- Edit `peerDependencies.kenmon` when step 5 raised it.
 - Add the new entry at the top of `packages/<dir>/CHANGELOG.md`, right under the `# <name>` title, in this exact shape:
 
 ```
@@ -94,7 +94,7 @@ For each package to release:
 - <change 2>
 ```
 
-- **Step 5 raised the peer range?** → add the bullet `- Requires kenmon@<new kenmon version> or later.`
+- MUST NOT edit `package.json`. `pnpm tag-release` sets the version from the tag that `/release-push` reads from this heading.
 - Group related commits into one bullet, and lead each bullet with the user-facing effect. Write prose, not raw commit subjects.
 
 **Write plainly. State facts, not impressions.** The default model voice reads as marketing copy, so strip it out:
@@ -110,18 +110,17 @@ For each drafted package, tell the user:
 
 - the range used, and whether it fell back to the full history
 - the version, with the reasoning
-- the peer range change, if any
 - the tag that `/release-push` will create once the drafts are staged: `<name>@<version>`
 
 Then stop for review.
 
 - Next step: review the drafts, stage them with `git add` to confirm the release, then run `/release-push`.
-- **The user changes a package's version during review?** → rerun `npm version <version> --no-git-tag-version` in its directory and update the `## <version>` heading of its CHANGELOG.md entry to match.
+- **The user changes a package's version during review?** → update the `## <version>` heading of its CHANGELOG.md entry. Nothing else holds the drafted version.
 
 ## Rules
 
 - **Repo-local skill**: it documents kenmon's own releases.
 - **Drives git directly**: no script backs it.
 - **Main only**: drafts only on the `main` branch, matching `origin/main`. When the checkout is clean, it switches to `main`, fast-forwards it from `origin/main`, and pushes local `main` commits that `origin/main` lacks.
-- **Decides and drafts only**: the versions and changelog entries stay uncommitted. Staging them confirms the release, and `/release-push` then commits, tags, and pushes them.
-- **Writes only `packages/*/package.json` and `packages/*/CHANGELOG.md`**: `pnpm tag-release` rejects any other change in the release commit.
+- **Decides and drafts only**: the changelog entries stay uncommitted. Staging them confirms the release, and `/release-push` then sets the versions, commits, tags, and pushes.
+- **Writes only `packages/*/CHANGELOG.md`**: `package.json` stays unchanged, and `pnpm tag-release` rejects any other change in the release commit.

@@ -1,9 +1,11 @@
 import { execFileSync } from 'node:child_process'
+import fs from 'node:fs'
+import path from 'node:path'
 
-type PackageVersionChange = {
+type WorkspacePackage = {
   name: string
   version: string
-  packageJsonPath: string
+  dir: string
 }
 
 type ReleaseTag = {
@@ -12,9 +14,13 @@ type ReleaseTag = {
   version: string
 }
 
+type Release = ReleaseTag & {
+  packageDir: string
+}
+
 const RELEASE_BRANCH = 'main'
-const PACKAGE_JSON_PATH_PATTERN = /^packages\/[^/]+\/package\.json$/
-const CHANGELOG_PATH_PATTERN = /^packages\/[^/]+\/CHANGELOG\.md$/
+const PACKAGES_DIR = 'packages'
+const CHANGELOG_PATH_PATTERN = /^packages\/([^/]+)\/CHANGELOG\.md$/
 const STAGED_STATUSES = new Set(['M ', 'A '])
 const VERSION_PATTERN = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/
 
@@ -25,31 +31,23 @@ function main(): void {
 
   const releaseTags = parseReleaseTags(process.argv.slice(2))
   assertOnReleaseBranch(repoRoot)
-  const stagedPaths = findStagedReleasePaths(repoRoot)
-  const versionChanges = findPackageVersionChanges(repoRoot, stagedPaths)
-  assertTagsMatchVersionChanges(releaseTags, versionChanges)
-  assertTagsAreNew(repoRoot, releaseTags)
+  const changelogDirs = findStagedChangelogDirs(repoRoot)
+  const releases = matchTagsToChangelogs(
+    releaseTags,
+    changelogDirs,
+    readWorkspacePackages(repoRoot),
+  )
+  assertTagsAreNew(repoRoot, releases)
 
-  const commitMessage = releaseTags
-    .map((releaseTag) => releaseTag.tag)
-    .join(', ')
-  git(repoRoot, ['commit', '-m', commitMessage], 'inherit')
-  for (const releaseTag of releaseTags) {
-    git(
-      repoRoot,
-      ['tag', '-a', releaseTag.tag, '-m', releaseTag.tag],
-      'inherit',
-    )
-  }
-
-  printNextSteps(commitMessage, releaseTags)
+  bumpVersions(repoRoot, releases)
+  const commitMessage = commitRelease(repoRoot, releases)
+  tagRelease(repoRoot, releases)
+  printNextSteps(commitMessage, releases)
 }
 
 function parseReleaseTags(args: string[]): ReleaseTag[] {
   if (args.length === 0) {
-    fail(
-      'Pass the confirmed release tags, e.g. pnpm tag-release kenmon@1.0.0-pre.4',
-    )
+    fail('Pass the release tags, e.g. pnpm tag-release kenmon@1.0.0-pre.4')
   }
 
   const releaseTags = args.map(parseReleaseTag)
@@ -85,7 +83,7 @@ function assertOnReleaseBranch(repoRoot: string): void {
   }
 }
 
-function findStagedReleasePaths(repoRoot: string): string[] {
+function findStagedChangelogDirs(repoRoot: string): string[] {
   const gitStatusLines = git(repoRoot, [
     'status',
     '--porcelain',
@@ -96,16 +94,16 @@ function findStagedReleasePaths(repoRoot: string): string[] {
 
   if (gitStatusLines.length === 0) {
     fail(
-      'No staged release changes. Run /release-prep, then review and stage its drafts.',
+      'No staged changelog drafts. Run /release-prep, then review and stage its drafts.',
     )
   }
 
   const otherChanges = gitStatusLines.filter(
-    (line) => !isReleasePath(line.slice(3)),
+    (line) => !CHANGELOG_PATH_PATTERN.test(line.slice(3)),
   )
   if (otherChanges.length > 0) {
     fail(
-      `The working tree has changes other than package.json and CHANGELOG.md drafts:\n${otherChanges.join('\n')}\nCommit or discard them before tagging a release.`,
+      `The working tree has changes other than packages/*/CHANGELOG.md drafts:\n${otherChanges.join('\n')}\nCommit or discard them before tagging a release.`,
     )
   }
 
@@ -114,105 +112,80 @@ function findStagedReleasePaths(repoRoot: string): string[] {
   )
   if (unstagedChanges.length > 0) {
     fail(
-      `These release drafts are not fully staged:\n${unstagedChanges.join('\n')}\nReview them and stage them with git add before tagging a release.`,
+      `These changelog drafts are not fully staged:\n${unstagedChanges.join('\n')}\nReview them and stage them with git add before tagging a release.`,
     )
   }
 
-  return gitStatusLines.map((line) => line.slice(3))
-}
-
-function isReleasePath(filePath: string): boolean {
-  return (
-    PACKAGE_JSON_PATH_PATTERN.test(filePath) ||
-    CHANGELOG_PATH_PATTERN.test(filePath)
+  return gitStatusLines.map(
+    (line) => line.slice(3).match(CHANGELOG_PATH_PATTERN)![1],
   )
 }
 
-function findPackageVersionChanges(
-  repoRoot: string,
-  stagedPaths: string[],
-): PackageVersionChange[] {
-  return stagedPaths
-    .filter((filePath) => PACKAGE_JSON_PATH_PATTERN.test(filePath))
-    .flatMap((packageJsonPath) => {
-      const stagedPackageJson = readPackageJson(repoRoot, `:${packageJsonPath}`)
-      const headPackageJson = readHeadPackageJson(repoRoot, packageJsonPath)
-      if (headPackageJson?.version === stagedPackageJson.version) {
-        return []
-      }
-      return [
-        {
-          name: stagedPackageJson.name,
-          version: stagedPackageJson.version,
-          packageJsonPath,
-        },
-      ]
-    })
+function readWorkspacePackages(repoRoot: string): WorkspacePackage[] {
+  return fs.readdirSync(path.join(repoRoot, PACKAGES_DIR)).flatMap((dir) => {
+    const packageJsonPath = path.join(
+      repoRoot,
+      PACKAGES_DIR,
+      dir,
+      'package.json',
+    )
+    if (!fs.existsSync(packageJsonPath)) {
+      return []
+    }
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
+    return [{ name: packageJson.name, version: packageJson.version, dir }]
+  })
 }
 
-function readHeadPackageJson(
-  repoRoot: string,
-  packageJsonPath: string,
-): { name: string; version: string } | null {
-  try {
-    git(repoRoot, ['cat-file', '-e', `HEAD:${packageJsonPath}`])
-  } catch {
-    return null
-  }
-  return readPackageJson(repoRoot, `HEAD:${packageJsonPath}`)
-}
-
-function readPackageJson(
-  repoRoot: string,
-  objectName: string,
-): { name: string; version: string } {
-  const packageJson = JSON.parse(git(repoRoot, ['show', objectName]))
-  if (
-    typeof packageJson.name !== 'string' ||
-    typeof packageJson.version !== 'string'
-  ) {
-    fail(`${objectName} has no name or version.`)
-  }
-  return { name: packageJson.name, version: packageJson.version }
-}
-
-function assertTagsMatchVersionChanges(
+function matchTagsToChangelogs(
   releaseTags: ReleaseTag[],
-  versionChanges: PackageVersionChange[],
-): void {
-  for (const releaseTag of releaseTags) {
-    const versionChange = versionChanges.find(
-      (change) => change.name === releaseTag.name,
+  changelogDirs: string[],
+  workspacePackages: WorkspacePackage[],
+): Release[] {
+  const releases = releaseTags.map((releaseTag) => {
+    const workspacePackage = workspacePackages.find(
+      (candidate) => candidate.name === releaseTag.name,
     )
-    if (versionChange == null) {
+    if (workspacePackage == null) {
+      fail(`${releaseTag.tag} names no package in ${PACKAGES_DIR}/.`)
+    }
+    if (!changelogDirs.includes(workspacePackage.dir)) {
       fail(
-        `${releaseTag.tag} names no package with a staged version change in packages/*/package.json.`,
+        `${releaseTag.tag} has no staged changelog draft in ${PACKAGES_DIR}/${workspacePackage.dir}/CHANGELOG.md.`,
       )
     }
-    if (versionChange.version !== releaseTag.version) {
+    if (workspacePackage.version === releaseTag.version) {
       fail(
-        `${releaseTag.tag} does not match the staged version ${versionChange.version} in ${versionChange.packageJsonPath}.`,
+        `${releaseTag.tag} is already the version in ${PACKAGES_DIR}/${workspacePackage.dir}/package.json.`,
       )
     }
+    return {
+      ...releaseTag,
+      packageDir: `${PACKAGES_DIR}/${workspacePackage.dir}`,
+    }
+  })
+
+  const untaggedDirs = changelogDirs.filter(
+    (dir) =>
+      !releases.some(
+        (release) => release.packageDir === `${PACKAGES_DIR}/${dir}`,
+      ),
+  )
+  if (untaggedDirs.length > 0) {
+    fail(
+      `These staged changelog drafts have no tag in the args:\n${untaggedDirs
+        .map((dir) => `${PACKAGES_DIR}/${dir}/CHANGELOG.md`)
+        .join('\n')}\nPass a tag for each one, or unstage it.`,
+    )
   }
 
-  const untaggedChanges = versionChanges.filter(
-    (change) =>
-      !releaseTags.some((releaseTag) => releaseTag.name === change.name),
-  )
-  if (untaggedChanges.length > 0) {
-    fail(
-      `These staged version changes have no tag in the args:\n${untaggedChanges
-        .map((change) => `${change.name}@${change.version}`)
-        .join('\n')}\nConfirm a tag for each one, or unstage it.`,
-    )
-  }
+  return releases
 }
 
-function assertTagsAreNew(repoRoot: string, releaseTags: ReleaseTag[]): void {
-  for (const releaseTag of releaseTags) {
-    if (tagExists(repoRoot, releaseTag.tag)) {
-      fail(`Tag ${releaseTag.tag} already exists.`)
+function assertTagsAreNew(repoRoot: string, releases: Release[]): void {
+  for (const release of releases) {
+    if (tagExists(repoRoot, release.tag)) {
+      fail(`Tag ${release.tag} already exists.`)
     }
   }
 }
@@ -229,11 +202,34 @@ function tagExists(repoRoot: string, tag: string): boolean {
   }
 }
 
-function printNextSteps(
-  commitMessage: string,
-  releaseTags: ReleaseTag[],
-): void {
-  const tags = releaseTags.map((releaseTag) => releaseTag.tag)
+function bumpVersions(repoRoot: string, releases: Release[]): void {
+  for (const release of releases) {
+    execFileSync('npm', ['version', release.version, '--no-git-tag-version'], {
+      cwd: path.join(repoRoot, release.packageDir),
+      stdio: 'inherit',
+    })
+  }
+}
+
+function commitRelease(repoRoot: string, releases: Release[]): string {
+  const packageJsonPaths = releases.map(
+    (release) => `${release.packageDir}/package.json`,
+  )
+  git(repoRoot, ['add', '--', ...packageJsonPaths], 'inherit')
+
+  const commitMessage = releases.map((release) => release.tag).join(', ')
+  git(repoRoot, ['commit', '-m', commitMessage], 'inherit')
+  return commitMessage
+}
+
+function tagRelease(repoRoot: string, releases: Release[]): void {
+  for (const release of releases) {
+    git(repoRoot, ['tag', '-a', release.tag, '-m', release.tag], 'inherit')
+  }
+}
+
+function printNextSteps(commitMessage: string, releases: Release[]): void {
+  const tags = releases.map((release) => release.tag)
   console.log(`\nCommitted "${commitMessage}" and tagged ${tags.join(', ')}.`)
   console.log('\nNext:')
   console.log('  Review the release commit: git show HEAD')
