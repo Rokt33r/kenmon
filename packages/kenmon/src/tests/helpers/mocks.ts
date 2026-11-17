@@ -167,6 +167,8 @@ export class MockStorage implements KenmonStorage<MockUser> {
 export class MockAdapter implements KenmonAdapter {
   private cookies: Map<string, string> = new Map()
   private cookieOptions: Map<string, CookieOptions> = new Map()
+  private deletedCookieOptions: Map<string, CookieOptions | undefined> =
+    new Map()
 
   async setCookie(
     name: string,
@@ -183,15 +185,17 @@ export class MockAdapter implements KenmonAdapter {
     return this.cookies.get(name)
   }
 
-  async deleteCookie(name: string): Promise<void> {
+  async deleteCookie(name: string, options?: CookieOptions): Promise<void> {
     this.cookies.delete(name)
     this.cookieOptions.delete(name)
+    this.deletedCookieOptions.set(name, options)
   }
 
   // Helper methods for testing
   clear() {
     this.cookies.clear()
     this.cookieOptions.clear()
+    this.deletedCookieOptions.clear()
   }
 
   hasCookie(name: string): boolean {
@@ -200,5 +204,9 @@ export class MockAdapter implements KenmonAdapter {
 
   getCookieOptions(name: string): CookieOptions | undefined {
     return this.cookieOptions.get(name)
+  }
+
+  getDeletedCookieOptions(name: string): CookieOptions | undefined {
+    return this.deletedCookieOptions.get(name)
   }
 }

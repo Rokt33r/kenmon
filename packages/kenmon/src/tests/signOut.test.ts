@@ -133,5 +133,25 @@ describe('signOut()', () => {
 
       expect(adapter.hasCookie('custom_session')).toBe(false)
     })
+
+    it('should pass the session cookie attributes when deleting a __Host- cookie', async () => {
+      const hostAuthService = new KenmonAuthService({
+        secret: testSecret,
+        storage,
+        adapter,
+        session: { cookieName: '__Host-session', secure: true },
+      })
+
+      await hostAuthService.signUp(defaultTestIdentifier, {})
+      await hostAuthService.signOut()
+
+      expect(adapter.hasCookie('__Host-session')).toBe(false)
+      expect(adapter.getDeletedCookieOptions('__Host-session')).toEqual({
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        path: '/',
+      })
+    })
   })
 })
