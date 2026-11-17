@@ -1,11 +1,11 @@
 ---
 name: release-push
-description: Turn the changelog entries that /release-prep drafted and the user staged into one tagged kenmon release commit on main, and push it with its tags, by running `pnpm tag-release <tags>`, which sets each package.json version, then `pnpm push-release`. Second and last step of a release.
+description: Turn the changelog entries that /release-prep drafted and the user staged into one tagged kenmon release commit on main, and push it with its tags, by running `pnpm tag-release <tags>`, which sets each package.json version and the peer ranges the drafts' `Requires` bullets name, then `pnpm push-release`. Second and last step of a release.
 ---
 
 # Release push: commit, tag, and push kenmon's release
 
-Build the `<name>@<version>` tags from the `## <version>` headings of the staged CHANGELOG.md entries that `/release-prep` drafted. Staging the drafts is the user's confirmation, so the skill asks no question. Run `pnpm tag-release <tags>`, which checks that each tag has a staged changelog draft, sets the version in each package's `package.json`, commits the drafts and the version bumps as one release commit, and tags it. Then run `pnpm push-release`, which pushes `main` and each unpushed tag one at a time, so every tag fires its own `release.yml` run, which publishes that package to npm.
+Build the `<name>@<version>` tags from the `## <version>` headings of the staged CHANGELOG.md entries that `/release-prep` drafted. Staging the drafts is the user's confirmation, so the skill asks no question. Run `pnpm tag-release <tags>`, which checks that each tag has a staged changelog draft, sets the version in each package's `package.json`, raises each peer range that a staged `- Requires <name>@<version> or later.` bullet names to `^<version>`, commits the drafts, the version bumps, and the peer range raises as one release commit, and tags it. Then run `pnpm push-release`, which pushes `main` and each unpushed tag one at a time, so every tag fires its own `release.yml` run, which publishes that package to npm.
 
 ## Arguments
 
@@ -25,7 +25,7 @@ None.
 ### 2. Tag the release
 
 - Run `pnpm tag-release <tag> <tag> ...` from the repo root, with every tag from step 1.
-- **The script exits non-zero?** → relay its message and stop. Name the fix it points to: `/release-prep` for missing drafts, reviewing and staging the drafts for unstaged ones, committing or discarding other changes, switching to `main` for the branch check, fixing the `## <version>` heading of the draft when the version is already in `package.json`.
+- **The script exits non-zero?** → relay its message and stop. Name the fix it points to: `/release-prep` for missing drafts, reviewing and staging the drafts for unstaged ones, committing or discarding other changes, switching to `main` for the branch check, fixing the `## <version>` heading of the draft when the version is already in `package.json`, fixing or removing a `Requires` bullet that names a package outside `packages/`, a peer the package doesn't declare, or a version that is neither released in this run nor already tagged.
 
 ### 3. Push the release
 
@@ -37,6 +37,7 @@ None.
 Print the report following the **report template** below, filled from both scripts' output.
 
 - List one tag line per released package.
+- List one line per peer range raise the script printed (`Raised <name> peerDependencies.<peer>: <from> -> <to>`). Omit the peer section when there is none.
 - Name the dist-tag from the version: its prerelease id (`pre` for `1.0.0-pre.4`), or `latest` for a stable version.
 
 **report template**
@@ -46,11 +47,15 @@ Released the commit `{shortsha}` "{commit subject}" and pushed `main` with its t
 
 - `kenmon@1.0.0-pre.4`, publishing to npm under the `pre` dist-tag through the `release.yml` workflow
 - `@kenmon/nextjs-adapter@1.0.0-pre.6`, publishing to npm under the `pre` dist-tag through the `release.yml` workflow
+
+Raised peer ranges in the release commit
+
+- `@kenmon/nextjs-adapter`: `peerDependencies.kenmon` `^1.0.0-pre.3` → `^1.0.0-pre.4`
 ```
 
 ## Rules
 
 - **Repo-local skill**: it documents kenmon's own releases.
 - **Staged means confirmed**: the user confirms a release by staging the drafts, so the skill asks no question before it runs the scripts. The script tags only drafts the user has staged, and stops on any draft that is untracked or has unstaged edits.
-- **The script sets the versions**: `pnpm tag-release` writes each `package.json` version from its tag. The skill never edits `package.json`.
+- **The script sets the versions and peer ranges**: `pnpm tag-release` writes each `package.json` version from its tag, and each peer range from a staged `Requires` bullet. The skill never edits `package.json`.
 - **Scripts own the git work**: the skill never edits versions, commits, tags, or pushes by hand.

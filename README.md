@@ -44,7 +44,7 @@ Each package in `packages/` has its own version and is released on its own. A re
 
    For each package with user-facing changes since its last `<name>@<version>` tag, the skill decides the next version and adds a `## <version>` entry at the top of the package's `CHANGELOG.md`. It does not edit `package.json`. The drafts stay uncommitted.
 
-   When a dependent needs the new `kenmon` version, the skill stops and asks you to raise the dependent's `kenmon` peer range in a regular commit first.
+   When a dependent needs the new `kenmon` version, the skill releases the dependent too and adds `- Requires kenmon@<version> or later.` to its draft. The skill ends by printing how each dependent's `kenmon` peer range will change.
 
 2. **Review and stage the drafts**:
 
@@ -56,7 +56,7 @@ Each package in `packages/` has its own version and is released on its own. A re
 
 3. **Release** with `/release-push`. The skill:
    - builds one `<name>@<version>` tag from the `## <version>` heading of each staged draft
-   - runs `pnpm tag-release <tags>`, which sets each version in `package.json`, commits it with the drafts, and tags the commit
+   - runs `pnpm tag-release <tags>`, which sets each version in `package.json`, raises each peer range to `^<version>` from a staged `Requires <name>@<version> or later.` bullet, commits it with the drafts, and tags the commit
    - runs `pnpm push-release`, which pushes `main` and then each new tag one at a time
 
 4. **CI publishes** each tag. The `.github/workflows/release.yml` workflow runs once per tag and publishes that one package with npm Trusted Publishing. A prerelease version such as `1.0.0-pre.4` goes to the `pre` npm dist-tag, and a stable version goes to `latest`.

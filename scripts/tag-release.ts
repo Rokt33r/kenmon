@@ -18,11 +18,19 @@ type Release = ReleaseTag & {
   packageDir: string
 }
 
+type PeerRaise = {
+  release: Release
+  peerName: string
+  fromRange: string
+  toRange: string
+}
+
 const RELEASE_BRANCH = 'main'
 const PACKAGES_DIR = 'packages'
 const CHANGELOG_PATH_PATTERN = /^packages\/([^/]+)\/CHANGELOG\.md$/
 const STAGED_STATUSES = new Set(['M ', 'A '])
 const VERSION_PATTERN = /^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/
+const REQUIRES_LINE_PATTERN = /^\+- Requires (\S+@\S+) or later\.$/
 
 main()
 
@@ -32,17 +40,20 @@ function main(): void {
   const releaseTags = parseReleaseTags(process.argv.slice(2))
   assertOnReleaseBranch(repoRoot)
   const changelogDirs = findStagedChangelogDirs(repoRoot)
+  const workspacePackages = readWorkspacePackages(repoRoot)
   const releases = matchTagsToChangelogs(
     releaseTags,
     changelogDirs,
-    readWorkspacePackages(repoRoot),
+    workspacePackages,
   )
   assertTagsAreNew(repoRoot, releases)
+  const peerRaises = findPeerRaises(repoRoot, releases, workspacePackages)
 
   bumpVersions(repoRoot, releases)
+  raisePeerRanges(repoRoot, peerRaises)
   const commitMessage = commitRelease(repoRoot, releases)
   tagRelease(repoRoot, releases)
-  printNextSteps(commitMessage, releases)
+  printNextSteps(commitMessage, releases, peerRaises)
 }
 
 function parseReleaseTags(args: string[]): ReleaseTag[] {
@@ -202,6 +213,76 @@ function tagExists(repoRoot: string, tag: string): boolean {
   }
 }
 
+// A staged draft line `- Requires <name>@<version> or later.` raises the
+// releasing package's peerDependencies.<name> to ^<version>. The draft is the
+// only record of the raise, so /release-prep never edits package.json.
+function findPeerRaises(
+  repoRoot: string,
+  releases: Release[],
+  workspacePackages: WorkspacePackage[],
+): PeerRaise[] {
+  return releases.flatMap((release) => {
+    const changelogPath = `${release.packageDir}/CHANGELOG.md`
+    const requiredTags = git(repoRoot, [
+      'diff',
+      '--cached',
+      '--',
+      changelogPath,
+    ])
+      .split('\n')
+      .map((line) => line.match(REQUIRES_LINE_PATTERN)?.[1])
+      .filter((tag) => tag != null)
+
+    const packageJson = readPackageJson(repoRoot, release.packageDir)
+    return requiredTags.map((requiredTag) => {
+      const required = parseReleaseTag(requiredTag)
+      if (!workspacePackages.some((pkg) => pkg.name === required.name)) {
+        fail(
+          `${changelogPath} requires ${requiredTag}, but ${required.name} is not a package in ${PACKAGES_DIR}/.`,
+        )
+      }
+      const fromRange = packageJson.peerDependencies?.[required.name]
+      if (fromRange == null) {
+        fail(
+          `${changelogPath} requires ${requiredTag}, but ${release.packageDir}/package.json has no peerDependencies.${required.name}.`,
+        )
+      }
+      const releasedTogether = releases.some(
+        (other) => other.tag === requiredTag,
+      )
+      if (!releasedTogether && !tagExists(repoRoot, requiredTag)) {
+        fail(
+          `${changelogPath} requires ${requiredTag}, which is neither released by this run nor an existing tag.`,
+        )
+      }
+      return {
+        release,
+        peerName: required.name,
+        fromRange,
+        toRange: `^${required.version}`,
+      }
+    })
+  })
+}
+
+function raisePeerRanges(repoRoot: string, peerRaises: PeerRaise[]): void {
+  for (const peerRaise of peerRaises) {
+    const packageDir = peerRaise.release.packageDir
+    const packageJson = readPackageJson(repoRoot, packageDir)
+    packageJson.peerDependencies[peerRaise.peerName] = peerRaise.toRange
+    fs.writeFileSync(
+      path.join(repoRoot, packageDir, 'package.json'),
+      `${JSON.stringify(packageJson, null, 2)}\n`,
+    )
+  }
+}
+
+function readPackageJson(repoRoot: string, packageDir: string) {
+  return JSON.parse(
+    fs.readFileSync(path.join(repoRoot, packageDir, 'package.json'), 'utf8'),
+  )
+}
+
 function bumpVersions(repoRoot: string, releases: Release[]): void {
   for (const release of releases) {
     execFileSync('npm', ['version', release.version, '--no-git-tag-version'], {
@@ -228,9 +309,18 @@ function tagRelease(repoRoot: string, releases: Release[]): void {
   }
 }
 
-function printNextSteps(commitMessage: string, releases: Release[]): void {
+function printNextSteps(
+  commitMessage: string,
+  releases: Release[],
+  peerRaises: PeerRaise[],
+): void {
   const tags = releases.map((release) => release.tag)
   console.log(`\nCommitted "${commitMessage}" and tagged ${tags.join(', ')}.`)
+  for (const peerRaise of peerRaises) {
+    console.log(
+      `Raised ${peerRaise.release.name} peerDependencies.${peerRaise.peerName}: ${peerRaise.fromRange} -> ${peerRaise.toRange}`,
+    )
+  }
   console.log('\nNext:')
   console.log('  Review the release commit: git show HEAD')
   console.log('  Push main and the tags:    pnpm push-release')
