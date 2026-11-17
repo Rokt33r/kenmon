@@ -110,5 +110,5 @@ export interface CookieOptions {
 export interface KenmonAdapter {
   setCookie(name: string, value: string, options?: CookieOptions): Promise<void>
   getCookie(name: string): Promise<string | undefined>
-  deleteCookie(name: string): Promise<void>
+  deleteCookie(name: string, options?: CookieOptions): Promise<void>
 }

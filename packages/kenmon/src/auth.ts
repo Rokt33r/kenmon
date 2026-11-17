@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import {
   KenmonConfig,
   KenmonAdapter,
+  CookieOptions,
   KenmonReturnType,
   KenmonSession,
   KenmonStorage,
@@ -134,9 +135,7 @@ export class KenmonAuthService<U> {
     return session
   }
 
-  async verifySession(options?: {
-    skipMfaCheck?: boolean
-  }): Promise<
+  async verifySession(options?: { skipMfaCheck?: boolean }): Promise<
     KenmonReturnType<{
       id: string
       userId: string
@@ -244,6 +243,7 @@ export class KenmonAuthService<U> {
     }
     await this.adapter.deleteCookie(
       this.session.cookieName || defaultSessionCookieName,
+      this.getSessionCookieOptions(),
     )
   }
 
@@ -273,13 +273,19 @@ export class KenmonAuthService<U> {
       this.session.cookieName || defaultSessionCookieName,
       jwtToken,
       {
-        httpOnly: true,
-        secure: this.session.secure ?? process.env.NODE_ENV === 'production',
-        sameSite: this.session.sameSite || 'lax',
+        ...this.getSessionCookieOptions(),
         maxAge: this.session.ttl,
-        path: '/',
       },
     )
+  }
+
+  private getSessionCookieOptions(): CookieOptions {
+    return {
+      httpOnly: true,
+      secure: this.session.secure ?? process.env.NODE_ENV === 'production',
+      sameSite: this.session.sameSite || 'lax',
+      path: '/',
+    }
   }
 
   private generateSessionToken(): string {
