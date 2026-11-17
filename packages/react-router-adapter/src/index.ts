@@ -88,7 +88,7 @@ export class KenmonReactRouterAdapter implements KenmonAdapter {
     if (options?.httpOnly) cookieParts.push('HttpOnly')
     if (options?.secure) cookieParts.push('Secure')
     if (options?.sameSite) cookieParts.push(`SameSite=${options.sameSite}`)
-    if (options?.maxAge) cookieParts.push(`Max-Age=${options.maxAge}`)
+    if (options?.maxAge != null) cookieParts.push(`Max-Age=${options.maxAge}`)
     if (options?.path) cookieParts.push(`Path=${options.path}`)
 
     responseHeaders.append('Set-Cookie', cookieParts.join('; '))
@@ -106,10 +106,7 @@ export class KenmonReactRouterAdapter implements KenmonAdapter {
     return cookie?.split('=')[1]
   }
 
-  async deleteCookie(name: string): Promise<void> {
-    const { responseHeaders } = getKenmonReactRouterContext()
-
-    responseHeaders.append('Set-Cookie', `${name}=; Max-Age=0; Path=/`)
+  async deleteCookie(name: string, options?: CookieOptions): Promise<void> {
+    await this.setCookie(name, '', { ...options, maxAge: 0 })
   }
 }
-

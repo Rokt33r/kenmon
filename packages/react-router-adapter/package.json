@@ -47,7 +47,7 @@
     }
   },
   "scripts": {
-    "test": "tsc --noEmit",
+    "test": "tsc --noEmit && vitest run",
     "build": "tsdown",
     "clean": "rm -rf dist"
   },
@@ -59,6 +59,7 @@
     "@types/node": "^20.0.0",
     "kenmon": "workspace:*",
     "react-router": "^7.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.8"
   }
 }
