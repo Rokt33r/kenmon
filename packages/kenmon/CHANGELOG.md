@@ -1,5 +1,10 @@
 # kenmon
 
+## 1.0.0-pre.5
+
+- `signOut` now passes the session cookie options (`httpOnly`, `secure`, `sameSite`, and `path: '/'`) to `adapter.deleteCookie`. Before, it passed only the cookie name, so the browser ignored the delete for a `Secure` cookie with a `__Host-` or `__Secure-` prefix and the session cookie stayed after sign-out.
+- `KenmonAdapter.deleteCookie` now takes an optional second argument, `options?: CookieOptions`. A custom adapter should write these options into the header that clears the cookie.
+
 ## 1.0.0-pre.4
 
 - The session JWT now carries an `exp` claim set from `session.ttl`, so the token expires together with its session and cookie.

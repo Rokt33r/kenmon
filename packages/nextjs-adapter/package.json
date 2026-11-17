@@ -1,6 +1,6 @@
 {
   "name": "@kenmon/nextjs-adapter",
-  "version": "1.0.0-pre.5",
+  "version": "1.0.0-pre.6",
   "description": "Next.js framework adapter for Kenmon",
   "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
   "license": "MIT",
@@ -42,7 +42,7 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "kenmon": "^1.0.0-pre.3",
+    "kenmon": "^1.0.0-pre.5",
     "next": "^15.0.0 || ^16.0.0"
   },
   "devDependencies": {

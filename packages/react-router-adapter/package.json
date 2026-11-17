@@ -1,6 +1,6 @@
 {
   "name": "@kenmon/react-router-adapter",
-  "version": "1.0.0-pre.4",
+  "version": "1.0.0-pre.5",
   "description": "React Router framework adapter for Kenmon",
   "author": "Junyoung Choi <rokt33r.choi@gmail.com>",
   "license": "MIT",
@@ -52,7 +52,7 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "kenmon": "^1.0.0-pre.3",
+    "kenmon": "^1.0.0-pre.5",
     "react-router": "^7.0.0"
   },
   "devDependencies": {
