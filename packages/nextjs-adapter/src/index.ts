@@ -23,9 +23,9 @@ export class KenmonNextJSAdapter implements KenmonAdapter {
     return cookie?.value
   }
 
-  async deleteCookie(name: string): Promise<void> {
+  async deleteCookie(name: string, options?: CookieOptions): Promise<void> {
     const cookieStore = await cookies()
-    cookieStore.delete(name)
+    cookieStore.delete({ name, ...options })
   }
 }
 
