@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const reactRouterPort = 5391
+const nextjsPort = 5392
 
 export default defineConfig({
   testDir: './tests',
@@ -16,11 +17,23 @@ export default defineConfig({
         baseURL: `http://localhost:${reactRouterPort}`,
       },
     },
+    {
+      name: 'nextjs',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://localhost:${nextjsPort}`,
+      },
+    },
   ],
   webServer: [
     {
       command: `pnpm --filter e2e-react-router exec react-router dev --port ${reactRouterPort} --strictPort`,
       url: `http://localhost:${reactRouterPort}`,
+      reuseExistingServer: !process.env.CI,
+    },
+    {
+      command: `pnpm --filter e2e-nextjs exec next dev --webpack --port ${nextjsPort}`,
+      url: `http://localhost:${nextjsPort}`,
       reuseExistingServer: !process.env.CI,
     },
   ],
