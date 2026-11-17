@@ -11,6 +11,7 @@
     "build": "pnpm -r --filter='./packages/*' build",
     "clean": "pnpm -r --filter='./packages/*' clean",
     "test": "pnpm -r --filter='./packages/*' test",
+    "test:e2e": "pnpm build && pnpm --filter e2e test:e2e",
     "format": "pretty-quick --staged",
     "format:all": "prettier --write .",
     "dev:nextjs": "pnpm --filter nextjs dev",
